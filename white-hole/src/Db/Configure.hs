@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Db.Configure
-( connectionMyDB,
-  connectToDB
+( connectToDB
 ) where
 
 import Database.PostgreSQL.Simple
