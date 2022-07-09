@@ -5,17 +5,14 @@ module Db.Configure
 ) where
 
 import Database.PostgreSQL.Simple
+import System.Environment
 
 connectToDB :: IO Connection
 connectToDB = do
-    putStrLn "Digite o host: "
-    host <- getLine
-    putStrLn "Digite o database: "
-    database <- getLine
-    putStrLn "Digite o user: "
-    user <- getLine
-    putStrLn "Digite o password: "
-    password <- getLine
+    host <- getEnv "dbhost"
+    database <- getEnv "db"
+    user <- getEnv "dbuser"
+    password <- getEnv "dbpassword"
     let db = defaultConnectInfo {
         connectHost = host,
         connectDatabase = database,
