@@ -4,6 +4,7 @@ import Database.PostgreSQL.Simple
 import Db.Operations
 import Db.Configure
 import Entities.User
+import System.IO
 
 signUp :: Connection -> IO()
 signUp conn = do
@@ -24,7 +25,7 @@ signIn :: Connection -> IO()
 signIn conn = do
   putStrLn "Digite o seu e-mail:"
   userEmail <- getLine
-  putStrLn "Digte a sua senha:"
+  putStrLn "Digite a sua senha:"
   userPassword <- getLine
   {- Chamada da função run que roda as opções de avaliação e de 
   pesquisa, assim como os rankings! -}
@@ -58,7 +59,70 @@ firstMenu conn = do
     putStrLn $ show result-}
 
 
-main :: IO()
+data RunOption
+  = Seach
+  | MyList
+  | TenBestMovies
+  | TenBestSeries
+  | TenBestMoviesByCategory
+  | TenBestSeriesByCategory
+  | FirstMenu
+  deriving Show
+
+
+run :: IO RunOption
+run = do
+  putStrLn "" 
+  putStrLn "1 - Procurar por filme"
+  putStrLn "2 - Minha lista de marcados para assistir depois"
+  putStrLn "3 - 10 melhores filmes"
+  putStrLn "4 - 10 melhores séries"
+  putStrLn "5 - 10 melhores filmes por categoria"
+  putStrLn "6 - 10 melhores séries por categoria"
+  putStrLn "7 - Logout"
+  putStrLn ""
+  putStrLn "Digite a opção desejada: "
+  hFlush stdout
+  option <- getLine
+  case option of
+    "1" -> return Seach
+    "2" -> return MyList
+    "3" -> return TenBestMovies
+    "4" -> return TenBestSeries
+    "5" -> return TenBestMoviesByCategory
+    "6" -> return TenBestSeriesByCategory
+    "7" -> return FirstMenu
+  
+{-Funções criadas apenas para testar a função run-}
+seach :: IO ()
+seach = undefined
+
+myList :: IO ()
+myList = undefined
+
+tenBestMovies :: IO ()
+tenBestMovies = undefined
+
+tenBestSeries :: IO ()
+tenBestSeries = undefined
+
+tenBestMoviesByCategory :: IO ()
+tenBestMoviesByCategory = undefined
+
+tenBestSeriesByCategory :: IO ()
+tenBestSeriesByCategory = undefined
+
+main :: IO ()
 main = do
   conn <- connectToDB
   firstMenu conn
+  option <- run
+  case option of
+    Seach                   -> seach
+    MyList                  -> myList
+    TenBestMovies           -> tenBestMovies
+    TenBestSeries           -> tenBestSeries
+    TenBestMoviesByCategory -> tenBestMoviesByCategory
+    TenBestSeriesByCategory -> tenBestSeriesByCategory
+    FirstMenu               -> firstMenu conn
+      
