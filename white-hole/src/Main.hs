@@ -4,6 +4,7 @@ import Database.PostgreSQL.Simple
 import Db.Operations
 import Db.Configure
 import Entities.User
+import System.IO
 
 signUp :: Connection -> IO()
 signUp conn = do
@@ -24,13 +25,17 @@ signIn :: Connection -> IO()
 signIn conn = do
   putStrLn "Digite o seu e-mail:"
   userEmail <- getLine
-  putStrLn "Digte a sua senha:"
+  putStrLn "Digite a sua senha:"
   userPassword <- getLine
   {- Chamada da função run que roda as opções de avaliação e de 
   pesquisa, assim como os rankings! -}
   authenticated <- authenticate conn userEmail userPassword
-  let answer = if authenticated then "Bem vindo!" else "E-mail ou senha inválidos!"
-  putStrLn answer
+  if authenticated then do
+    putStrLn "Bem vindo!"
+    run conn
+  else do
+    putStrLn "E-mail ou senha inválidos!"
+    firstMenu conn
 
 
 firstMenu :: Connection -> IO()
@@ -53,12 +58,52 @@ firstMenu conn = do
   else do
     putStrLn "Digite uma opção válida na próxima!"
     putStrLn ""
-    {-conn <- connectionMyDB
-    [Only result] <- query_ conn "select 2 + 2" :: IO [Only Int]
-    putStrLn $ show result-}
 
 
-main :: IO()
+run :: Connection -> IO()
+run conn = do
+  putStrLn "" 
+  putStrLn "1 - Procurar por filme"
+  putStrLn "2 - Minha lista de marcados para assistir depois"
+  putStrLn "3 - 10 melhores filmes"
+  putStrLn "4 - 10 melhores séries"
+  putStrLn "5 - 10 melhores filmes por categoria"
+  putStrLn "6 - 10 melhores séries por categoria"
+  putStrLn "7 - Logout"
+  putStrLn ""
+  putStrLn "Digite a opção desejada: "
+  hFlush stdout
+  option <- getLine
+  case option of
+    "1" -> search
+    "2" -> myList
+    "3" -> tenBestMovies
+    "4" -> tenBestSeries
+    "5" -> tenBestMoviesByCategory
+    "6" -> tenBestSeriesByCategory
+    "7" -> firstMenu conn
+  
+{-Funções criadas apenas para testar a função run-}
+search :: IO ()
+search = undefined
+
+myList :: IO ()
+myList = undefined
+
+tenBestMovies :: IO ()
+tenBestMovies = undefined
+
+tenBestSeries :: IO ()
+tenBestSeries = undefined
+
+tenBestMoviesByCategory :: IO ()
+tenBestMoviesByCategory = undefined
+
+tenBestSeriesByCategory :: IO ()
+tenBestSeriesByCategory = undefined
+
+main :: IO ()
 main = do
   conn <- connectToDB
   firstMenu conn
+  
