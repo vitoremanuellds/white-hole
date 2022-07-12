@@ -30,8 +30,12 @@ signIn conn = do
   {- Chamada da função run que roda as opções de avaliação e de 
   pesquisa, assim como os rankings! -}
   authenticated <- authenticate conn userEmail userPassword
-  let answer = if authenticated then "Bem vindo!" else "E-mail ou senha inválidos!"
-  putStrLn answer
+  if authenticated then do
+    putStrLn "Bem vindo!"
+    run conn
+  else do
+    putStrLn "E-mail ou senha inválidos!"
+    firstMenu conn
 
 
 firstMenu :: Connection -> IO()
@@ -54,24 +58,10 @@ firstMenu conn = do
   else do
     putStrLn "Digite uma opção válida na próxima!"
     putStrLn ""
-    {-conn <- connectionMyDB
-    [Only result] <- query_ conn "select 2 + 2" :: IO [Only Int]
-    putStrLn $ show result-}
 
 
-data RunOption
-  = Seach
-  | MyList
-  | TenBestMovies
-  | TenBestSeries
-  | TenBestMoviesByCategory
-  | TenBestSeriesByCategory
-  | FirstMenu
-  deriving Show
-
-
-run :: IO RunOption
-run = do
+run :: Connection -> IO()
+run conn = do
   putStrLn "" 
   putStrLn "1 - Procurar por filme"
   putStrLn "2 - Minha lista de marcados para assistir depois"
@@ -85,17 +75,17 @@ run = do
   hFlush stdout
   option <- getLine
   case option of
-    "1" -> return Seach
-    "2" -> return MyList
-    "3" -> return TenBestMovies
-    "4" -> return TenBestSeries
-    "5" -> return TenBestMoviesByCategory
-    "6" -> return TenBestSeriesByCategory
-    "7" -> return FirstMenu
+    "1" -> search
+    "2" -> myList
+    "3" -> tenBestMovies
+    "4" -> tenBestSeries
+    "5" -> tenBestMoviesByCategory
+    "6" -> tenBestSeriesByCategory
+    "7" -> firstMenu conn
   
 {-Funções criadas apenas para testar a função run-}
-seach :: IO ()
-seach = undefined
+search :: IO ()
+search = undefined
 
 myList :: IO ()
 myList = undefined
@@ -116,13 +106,4 @@ main :: IO ()
 main = do
   conn <- connectToDB
   firstMenu conn
-  option <- run
-  case option of
-    Seach                   -> seach
-    MyList                  -> myList
-    TenBestMovies           -> tenBestMovies
-    TenBestSeries           -> tenBestSeries
-    TenBestMoviesByCategory -> tenBestMoviesByCategory
-    TenBestSeriesByCategory -> tenBestSeriesByCategory
-    FirstMenu               -> firstMenu conn
-      
+  
