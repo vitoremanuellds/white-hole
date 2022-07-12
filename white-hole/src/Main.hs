@@ -75,7 +75,7 @@ run conn = do
   hFlush stdout
   option <- getLine
   case option of
-    "1" -> search
+    "1" -> search conn
     "2" -> myList
     "3" -> tenBestMovies
     "4" -> tenBestSeries
@@ -84,9 +84,6 @@ run conn = do
     "7" -> firstMenu conn
   
 {-Funções criadas apenas para testar a função run-}
-search :: IO ()
-search = undefined
-
 myList :: IO ()
 myList = undefined
 
@@ -107,3 +104,24 @@ main = do
   conn <- connectToDB
   firstMenu conn
   
+
+
+
+search :: Connection -> IO()
+search conn = do
+  putStrLn "----------PESQUISAR----------"
+  putStrLn "Digite o nome do filme que deseja pesquisar"
+  movie <- getLine
+
+  -- searchMovie movie (chamada da função)
+  putStrLn "Digite o número correspondente ao filme que quer ver: "
+  putStrLn "Caso não encontre digite -1 para voltar ao menu principal, ou 0 para pesquisar novamente."
+
+  option <- getLine
+  if option == "-1" then
+    firstMenu conn
+  else if option == "0" then
+    search conn
+  else do
+    -- showMovie option 
+    putStrLn "-- showMovie option"
