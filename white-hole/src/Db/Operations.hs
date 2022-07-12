@@ -4,6 +4,8 @@ module Db.Operations where
 import Database.PostgreSQL.Simple
 import Db.Configure
 import Entities.User
+import qualified Entities.Movie as M
+import qualified Entities.Rating as R
 
 createUser :: Connection -> User -> IO Bool
 createUser conn user = do
@@ -20,7 +22,6 @@ getUserByEmail conn userEmail = do
     query conn q [userEmail] :: IO [User]
     
 
-
 userAlreadyExists :: Connection -> String -> IO Bool
 userAlreadyExists conn userEmail = do
     result <- getUserByEmail conn userEmail
@@ -33,3 +34,27 @@ authenticate conn userEmail userPassword = do
         return (password (head result) == userPassword)
     else
         return False
+
+addToWatchLaterList :: Connection -> User -> M.Movie -> IO Bool
+addToWatchLaterList conn user movie = do
+    userExists <- userAlreadyExists conn $ email user
+    if userExists then do
+        execute conn "INSERT INTO watchlaterlist values (?,?)" (email user, M.movieId movie)
+        return True
+    else do
+        return False
+
+avaluateMovie :: Connection -> User -> M.Movie -> Integer -> String -> IO Bool
+avaluateMovie conn user movie rating commentary = do
+    userExists <- userAlreadyExists conn $ email user
+    if userExists && (rating `elem` [1..5]) then do
+        execute conn "INSERT INTO ratings (useremail, movieid, rating, commentary) values (?, ?, ?, ?)" (email user, M.movieId movie, rating, commentary)
+        return True
+    else do
+        return False
+
+getRatings :: Connection -> M.Movie -> IO [R.Rating]
+getRatings conn movie = do
+    query conn "SELECT * FROM ratings WHERE movieid = ?;" [M.movieId movie] :: IO [R.Rating]
+
+
