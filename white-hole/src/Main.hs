@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 module Main where
 import Database.PostgreSQL.Simple
 import Db.Operations
@@ -8,7 +9,7 @@ import System.IO
 import qualified Entities.Movie as M
 import System.Exit
 import Entities.Serie
-import Data.Char (toLower, toUpper)
+import Data.Char (toLower, toUpper, isNumber, isAlphaNum, isDigit)
 
 signUp :: Connection -> IO()
 signUp conn = do
@@ -40,7 +41,7 @@ signIn conn = do
     run conn $ head user
   else do
     putStrLn "E-mail ou senha inválidos!"
-    firstMenu conn 
+    firstMenu conn
 
 
 firstMenu :: Connection -> IO()
@@ -68,7 +69,7 @@ firstMenu conn = do
 
 run :: Connection -> User -> IO()
 run conn user = do
-  putStrLn "" 
+  putStrLn ""
   putStrLn "1 - Procurar por filme"
   putStrLn "2 - Minha lista de marcados para assistir depois"
   putStrLn "3 - 10 melhores filmes"
@@ -81,17 +82,22 @@ run conn user = do
   hFlush stdout
   option <- getLine
   case option of
-    "1" -> search conn
+    "1" -> search conn user
     "2" -> myList conn user
     "3" -> tenBestMovies conn
     "4" -> tenBestSeries conn
     "5" -> tenBestMoviesByCategory conn
     "6" -> tenBestSeriesByCategory conn
     "7" -> firstMenu conn
-  
+    x -> putStrLn "Digite uma opção válida" >> run conn user
 
-search :: Connection -> IO()
-search conn = do
+isANumber :: String -> Bool -> Bool
+isANumber [] _ = True
+isANumber (x:xs) True = isDigit x && isANumber xs True
+
+
+search :: Connection -> User -> IO()
+search conn user = do
   putStrLn "----------PESQUISAR----------"
   putStrLn ""
   putStrLn "Digite o nome do filme que deseja pesquisar"
@@ -102,14 +108,16 @@ search conn = do
   printMoviesList movies 1
   putStrLn ""
 
-  putStrLn "Digite o número correspondente ao filme que quer ver: "
-  putStrLn "Caso não encontre digite -1 para voltar ao menu principal, ou 0 para pesquisar novamente."
+  putStrLn "Digite o número correspondente ao filme que quer ver (0 - Pesquisar novamente, -1 - Voltar ao menu principal): "
+  putStrLn ""
 
   option <- getLine
   if option == "-1" then
-    firstMenu conn
+    run conn user
   else if option == "0" then
-    search conn
+    search conn user
+  else if isANumber option True || (read option :: Int) > length movies then do
+    putStrLn "Digite uma opção válida na próxima vez."
   else do
     -- showMovie option 
     putStrLn "-- showMovie option"
@@ -126,7 +134,7 @@ myList conn user = do
     run conn user
   else do
     printMoviesList movies 1
-  
+
   putStrLn ""
   putStrLn "Opções:"
   putStrLn ""
@@ -190,7 +198,7 @@ main :: IO ()
 main = do
   conn <- connectToDB
   firstMenu conn
-  
+
 
 
 
