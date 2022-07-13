@@ -5,6 +5,8 @@ import Db.Operations
 import Db.Configure
 import Entities.User
 import System.IO
+import qualified Entities.Movie as M
+import System.Exit
 
 signUp :: Connection -> IO()
 signUp conn = do
@@ -32,10 +34,11 @@ signIn conn = do
   authenticated <- authenticate conn userEmail userPassword
   if authenticated then do
     putStrLn "Bem vindo!"
-    run conn
+    user <- getUserByEmail conn userEmail
+    run conn $ head user
   else do
     putStrLn "E-mail ou senha inválidos!"
-    firstMenu conn
+    firstMenu conn 
 
 
 firstMenu :: Connection -> IO()
@@ -49,19 +52,20 @@ firstMenu conn = do
   putStrLn ""
   putStrLn "Digite a opção que deseja acessar:"
   option <- getLine
-  if option == "1" then
+  if option == "1" then do
     signIn conn
-  else if option == "2" then
+  else if option == "2" then do
     signUp conn >> firstMenu conn
-  else if option == "3" then
+  else if option == "3" then do
     putStrLn "Obrigado, tenha um ótimo dia!"
+    exitSuccess
   else do
     putStrLn "Digite uma opção válida na próxima!"
     putStrLn ""
 
 
-run :: Connection -> IO()
-run conn = do
+run :: Connection -> User -> IO()
+run conn user = do
   putStrLn "" 
   putStrLn "1 - Procurar por filme"
   putStrLn "2 - Minha lista de marcados para assistir depois"
@@ -76,36 +80,13 @@ run conn = do
   option <- getLine
   case option of
     "1" -> search conn
-    "2" -> myList
-    "3" -> tenBestMovies
-    "4" -> tenBestSeries
-    "5" -> tenBestMoviesByCategory
-    "6" -> tenBestSeriesByCategory
+    "2" -> myList conn user
+    "3" -> tenBestMovies conn
+    "4" -> tenBestSeries conn
+    "5" -> tenBestMoviesByCategory conn
+    "6" -> tenBestSeriesByCategory conn
     "7" -> firstMenu conn
   
-{-Funções criadas apenas para testar a função run-}
-myList :: IO ()
-myList = undefined
-
-tenBestMovies :: IO ()
-tenBestMovies = undefined
-
-tenBestSeries :: IO ()
-tenBestSeries = undefined
-
-tenBestMoviesByCategory :: IO ()
-tenBestMoviesByCategory = undefined
-
-tenBestSeriesByCategory :: IO ()
-tenBestSeriesByCategory = undefined
-
-main :: IO ()
-main = do
-  conn <- connectToDB
-  firstMenu conn
-  
-
-
 
 search :: Connection -> IO()
 search conn = do
@@ -125,3 +106,77 @@ search conn = do
   else do
     -- showMovie option 
     putStrLn "-- showMovie option"
+
+
+{-Funções criadas apenas para testar a função run-}
+myList :: Connection -> User -> IO ()
+myList conn user = do
+  putStrLn "------ Minha Lista Para Assistir Depois ------"
+  putStrLn ""
+  movies <- getWatchLaterList conn user
+  if null movies then do
+    print "Lista vazia"
+    run conn user
+  else do
+    printMoviesList movies 1
+  
+  putStrLn ""
+  putStrLn "Opções:"
+  putStrLn ""
+  putStrLn "1 - Acessar filme"
+  putStrLn "2 - Voltar"
+  putStrLn ""
+  putStrLn "Digite sua ação"
+  option <- getLine
+  if option == "1" then do
+    putStrLn ""
+    putStrLn "Qual filme você quer acessar? (Digite o número do filme da lista)"
+    filme <- getLine
+    if (read filme :: Int) > length movies || (read filme :: Int) <= 0 then do
+      putStrLn "digite uma opção válida"
+      myList conn user
+    else do
+      showMovie conn (movies !! (read filme :: Int))
+  else do
+    if option == "2" then do
+      run conn user
+    else do
+      putStrLn "Digite uma opção válida"
+      myList conn user
+
+
+
+printMoviesList :: [M.Movie] -> Integer -> IO ()
+printMoviesList movies seqNum = do
+  print (show seqNum ++ M.title (head movies))
+  printMoviesList (tail movies) (seqNum + 1)
+
+
+tenBestMovies :: Connection -> IO ()
+tenBestMovies conn = undefined
+
+
+tenBestSeries :: Connection -> IO ()
+tenBestSeries conn = undefined
+
+
+tenBestMoviesByCategory :: Connection -> IO ()
+tenBestMoviesByCategory conn = undefined
+
+
+tenBestSeriesByCategory :: Connection -> IO ()
+tenBestSeriesByCategory conn = undefined
+
+
+showMovie :: Connection -> M.Movie -> IO ()
+showMovie conn movie = undefined
+
+main :: IO ()
+main = do
+  conn <- connectToDB
+  firstMenu conn
+  
+
+
+
+

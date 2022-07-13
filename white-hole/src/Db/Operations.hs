@@ -71,3 +71,9 @@ searchMovie conn tWords movies = undefined
 getPlataformToWatch :: Connection -> M.Movie -> IO [String]
 getPlataformToWatch conn movie = undefined
 
+
+getWatchLaterList :: Connection -> User -> IO [M.Movie]
+getWatchLaterList conn user = do
+    movies <- query conn "SELECT * FROM watchlaterlist w WHERE w.useremail = ?" [email user] :: IO [M.Movie]
+    return movies
+
