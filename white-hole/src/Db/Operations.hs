@@ -6,6 +6,8 @@ import Db.Configure
 import Entities.User
 import qualified Entities.Movie as M
 import qualified Entities.Rating as R
+import Data.List
+import Data.Time
 
 createUser :: Connection -> User -> IO Bool
 createUser conn user = do
@@ -52,6 +54,7 @@ avaluateMovie conn user movie rating commentary = do
         return True
     else do
         return False
+        
 
 getRatings :: Connection -> M.Movie -> IO [R.Rating]
 getRatings conn movie = do
@@ -61,11 +64,23 @@ getRatings conn movie = do
 getCasting :: Connection -> M.Movie -> IO [String]
 getCasting conn movie = undefined
 
-searchMovie :: Connection -> [String] -> [M.Movie] -> IO [M.Movie]
-searchMovie conn tWords movies = undefined
-{- searchMovie _ (x:xs) _ = do
-    
-    searchMovie conn xs []-}
+
+
+titleContainsWord :: [String] -> M.Movie -> Bool
+titleContainsWord [] _ = False
+titleContainsWord (x:xs) movie = x `isInfixOf` M.title movie || titleContainsWord xs movie
+
+
+filterMovies :: [M.Movie] -> [String] -> [M.Movie]
+filterMovies [] _ = []
+filterMovies (x:xs) names = if titleContainsWord names x then x:filterMovies xs names else filterMovies xs names
+
+
+searchMovie :: Connection -> String -> IO [M.Movie]
+searchMovie conn title = do
+    let qWords = words title
+    movies <- query_ conn "SELECT * FROM movies m;" :: IO [M.Movie]
+    return (filterMovies movies qWords)
 
 
 getPlataformToWatch :: Connection -> M.Movie -> IO [String]

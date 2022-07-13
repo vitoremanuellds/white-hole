@@ -7,6 +7,8 @@ import Entities.User
 import System.IO
 import qualified Entities.Movie as M
 import System.Exit
+import Entities.Serie
+import Data.Char (toLower, toUpper)
 
 signUp :: Connection -> IO()
 signUp conn = do
@@ -91,10 +93,15 @@ run conn user = do
 search :: Connection -> IO()
 search conn = do
   putStrLn "----------PESQUISAR----------"
+  putStrLn ""
   putStrLn "Digite o nome do filme que deseja pesquisar"
+  putStrLn ""
   movie <- getLine
+  putStrLn ""
+  movies <- searchMovie conn (map toLower movie)
+  printMoviesList movies 1
+  putStrLn ""
 
-  -- searchMovie movie (chamada da função)
   putStrLn "Digite o número correspondente ao filme que quer ver: "
   putStrLn "Caso não encontre digite -1 para voltar ao menu principal, ou 0 para pesquisar novamente."
 
@@ -147,9 +154,14 @@ myList conn user = do
 
 
 printMoviesList :: [M.Movie] -> Integer -> IO ()
+printMoviesList [] _ = return ()
 printMoviesList movies seqNum = do
-  print (show seqNum ++ M.title (head movies))
+  putStrLn (show seqNum ++ " - " ++ capitalize (M.title (head movies)))
   printMoviesList (tail movies) (seqNum + 1)
+
+
+capitalize :: String -> String
+capitalize name = toUpper (head name) : tail name
 
 
 tenBestMovies :: Connection -> IO ()
@@ -170,6 +182,9 @@ tenBestSeriesByCategory conn = undefined
 
 showMovie :: Connection -> M.Movie -> IO ()
 showMovie conn movie = undefined
+
+showSerie :: Connection -> Serie -> IO()
+showSerie conn serie = undefined
 
 main :: IO ()
 main = do

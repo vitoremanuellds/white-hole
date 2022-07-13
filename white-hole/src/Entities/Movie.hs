@@ -1,13 +1,14 @@
 module Entities.Movie where
 
 import Database.PostgreSQL.Simple.FromRow
+import Data.Time
 
 data Movie = Movie {
     movieId :: Integer,
     title :: String,
     releaseDate :: String,
     summary :: String,
-    duration :: Integer,
+    duration :: String,
     rating :: Float
 } deriving (Show, Read, Eq)
 
