@@ -58,3 +58,16 @@ getRatings conn movie = do
     query conn "SELECT * FROM ratings WHERE movieid = ?;" [M.movieId movie] :: IO [R.Rating]
 
 
+getCasting :: Connection -> M.Movie -> IO [String]
+getCasting conn movie = undefined
+
+searchMovie :: Connection -> [String] -> [M.Movie] -> IO [M.Movie]
+searchMovie conn tWords movies = undefined
+{- searchMovie _ (x:xs) _ = do
+    
+    searchMovie conn xs []-}
+
+
+getPlataformToWatch :: Connection -> M.Movie -> IO [String]
+getPlataformToWatch conn movie = undefined
+
