@@ -10,6 +10,7 @@ import qualified Entities.Movie as M
 import System.Exit
 import Entities.Serie
 import Data.Char (toLower, toUpper, isNumber, isAlphaNum, isDigit)
+import qualified Entities.Rating as R
 
 signUp :: Connection -> IO()
 signUp conn = do
@@ -108,22 +109,21 @@ search conn user = do
     if null movies then putStrLn "Não foi encontrado nenhum filme ou série com esse título!" else printMoviesList movies 1
     putStrLn ""
 
-    putStrLn "Digite o número correspondente ao filme que quer ver "
-    putStrLn "(0 - Pesquisar novamente, -1 - Voltar ao menu principal, -2 - Cadastrar um novo filme ou série): "
+    putStrLn "Digite o número correspondente ao filme que quer ver ou as opções abaixo:"
+    putStrLn "( p - Pesquisar novamente; v - Voltar ao menu principal; c - Cadastrar um novo filme ou série): "
     putStrLn ""
 
     option <- getLine
-    if option == "-1" then
+    if option == "v" then
         run conn user
-    else if option == "0" then
+    else if option == "p" then
         search conn user
-    else if option == "-2" then
+    else if option == "c" then
         registerMovieSerie conn user
-    else if isANumber option True || (read option :: Int) > length movies then do
+    else if not (isANumber option True) || (((read option :: Int) > length movies) && (read option :: Int) < 1) then do
         putStrLn "Digite uma opção válida na próxima vez."
     else do
-        -- showMovie option 
-        putStrLn "-- showMovie option"
+        showMovie conn user (movies !! ((read option :: Int) - 1))
 
 
 registerMovieSerie :: Connection -> User -> IO ()
@@ -144,8 +144,8 @@ createMovie conn = do
     putStrLn ""
     putStrLn "Qual o título do filme?"
     title <- getLine
-    if null title then 
-        putStrLn "O filme deve ter um título!" >> createMovie conn 
+    if null title then
+        putStrLn "O filme deve ter um título!" >> createMovie conn
     else
         putStrLn "Qual a data de lançamento do filme? (yyyy-mm-dd)"
 
@@ -172,9 +172,9 @@ createSerie conn = do
     putStrLn ""
     putStrLn "Qual o título da série?"
     title <- getLine
-    if null title then 
-        putStrLn "O filme deve ter um título!" >> createMovie conn 
-    else 
+    if null title then
+        putStrLn "O filme deve ter um título!" >> createMovie conn
+    else
         putStrLn "Qual a data de lançamento da série? (yyyy-mm-dd)"
     releaseDate <- getLine
     putStrLn "Qual a quantidade de episódios da série?"
@@ -228,7 +228,7 @@ myList conn user = do
             putStrLn "digite uma opção válida"
             myList conn user
         else do
-            showMovie conn (movies !! (read filme :: Int))
+            showMovie conn user (movies !! (read filme :: Int))
     else do
         if option == "2" then do
             run conn user
@@ -265,8 +265,65 @@ tenBestSeriesByCategory :: Connection -> IO ()
 tenBestSeriesByCategory conn = undefined
 
 
-showMovie :: Connection -> M.Movie -> IO ()
-showMovie conn movie = undefined
+showMovie :: Connection -> User -> M.Movie -> IO ()
+showMovie conn user movie = do
+    putStrLn "-------------------------------------------------"
+    putStrLn (M.title movie)
+    putStrLn "-------------------------------------------------"
+    putStrLn ("Duração: " ++ M.summary movie)
+    putStrLn ("Data de lançamento: " ++ M.releaseDate movie)
+    putStrLn ""
+    putStrLn "1 - Mostrar casting do filme."
+    putStrLn "2 - Marcar como assistir depois."
+    putStrLn "3 - Avaliar filme."
+    putStrLn "4 - Mostrar informações sobre o filme."
+    putStrLn "5 - Voltar ao menu."
+    putStrLn ""
+    putStrLn "Digite a opção desejada: "
+    hFlush stdout
+    option <- getLine
+    case option of
+        "1" -> printCasting conn movie >> showMovie conn user movie
+        "2" -> addToWatchLaterList conn user movie >> putStrLn "Filme adicionado com sucesso na lista!" >> showMovie conn user movie
+        "3" -> newRating conn user movie >> showMovie conn user movie
+        "4" -> printRatings conn movie >> showMovie conn user movie
+        "5" -> run conn user
+        x -> putStrLn "Digite uma opção válida" >> showMovie conn user movie
+
+printCasting :: Connection -> M.Movie -> IO ()
+printCasting conn movie = do
+    casting <- getCasting conn movie
+    printCasting' casting
+
+printCasting' :: [(String, String)] -> IO ()
+printCasting' [] = return ()
+printCasting' (x:xs) = do
+    putStrLn ("* " ++ fst x ++ " - " ++ capitalize (snd x))
+    printCasting' xs
+
+newRating :: Connection -> User -> M.Movie -> IO ()
+newRating conn user movie = do
+    putStrLn ""
+    putStrLn "Dê uma nota para o filme (De 1 a 5): "
+    nota <- getLine
+    if not (isANumber nota True) then putStrLn "Digite um valor válido na próxima vez!" >> newRating conn user movie else putStrLn ""
+    putStrLn "Faça um comentário sobre o filme (Se não quiser, basta apertar enter): "
+    commentary <- getLine
+    putStrLn ""
+    avaluateMovie conn user movie (read nota :: Integer) commentary
+    putStrLn "Avaliação feita com sucesso!"
+
+printRatings :: Connection -> M.Movie -> IO ()
+printRatings conn movie = do
+    ratings <- getRatings conn movie
+    printRatings' ratings
+
+
+printRatings' :: [R.Rating] -> IO ()
+printRatings' [] = return ()
+printRatings' (x:xs) = do
+    putStrLn (R.userEmail x ++ " - " ++ show (R.rating x) ++ " - " ++ R.commentary x)
+    printRatings' xs
 
 showSerie :: Connection -> Serie -> IO()
 showSerie conn serie = undefined

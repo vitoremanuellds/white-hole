@@ -9,6 +9,7 @@ import qualified Entities.Rating as R
 import qualified Entities.Serie as S
 import Data.List
 import Data.Char (toLower)
+import Text.Read (Lexeme(String))
 
 
 createUser :: Connection -> User -> IO Bool
@@ -63,10 +64,13 @@ getRatings conn movie = do
     query conn "SELECT * FROM ratings WHERE movieid = ?;" [M.movieId movie] :: IO [R.Rating]
 
 
-getCasting :: Connection -> M.Movie -> IO [String]
-getCasting conn movie = undefined
+getCasting :: Connection -> M.Movie -> IO [(String, String)]
+getCasting conn movie = do
+    query conn "SELECT name, movieFunction FROM casting WHERE movieid = ?;" [M.movieId movie] :: IO [(String, String)]
 
-
+getCastingSerie :: Connection -> S.Serie -> IO [(String, String)]
+getCastingSerie conn serie = do
+    query conn "SELECT name, seriefunction FROM seriescasting WHERE serieid = ?;" [S.serieId serie] :: IO [(String, String)]
 
 titleContainsWordMovie :: [String] -> M.Movie -> Bool
 titleContainsWordMovie [] _ = False
@@ -155,8 +159,13 @@ addDirectorsToSerie conn serie directors = do
 
 updateMovieRating :: Connection -> M.Movie -> IO Float
 updateMovieRating conn movie = do
-    [Only rating] <- query conn "SELECT AVG(ratingId) FROM movies WHERE movieid=?;" [M.movieId movie] :: IO [Only Float]
+    [Only rating] <- query conn "SELECT AVG(rating) FROM ratings WHERE movieid=?;" [M.movieId movie] :: IO [Only Float]
     execute conn "UPDATE movies SET rating = ? WHERE movieid = ?;" (rating, M.movieId movie)
     return rating
 
+updateSerieRating :: Connection -> S.Serie -> IO Float
+updateSerieRating conn serie = do
+    [Only rating] <- query conn "SELECT AVG(rating) FROM seriesratings WHERE serieid=?;" [S.serieId serie] :: IO [Only Float]
+    execute conn "UPDATE series SET rating = ? WHERE serieid = ?;" (rating, S.serieId serie)
+    return rating
 
