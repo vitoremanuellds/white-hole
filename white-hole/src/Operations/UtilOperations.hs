@@ -2,6 +2,7 @@
 module Operations.UtilOperations where
 
 import Data.Char
+import qualified System.Process as System
 
 
 isANumber :: String -> Bool -> Bool
@@ -38,3 +39,18 @@ convertCategories (x:xs) result = do
 concatenateWithComma :: [String] -> String
 concatenateWithComma [] = []
 concatenateWithComma (x:xs) = " " ++ x ++ "," ++ concatenateWithComma xs
+
+
+clearScreenWithConfirmation :: IO ()
+clearScreenWithConfirmation = do
+    putStrLn ""
+    putStrLn "(Aperte Enter para continuar)"
+    placebo <- getLine
+    System.system "clear"
+    putStrLn ""
+
+
+clearScreenOnly :: IO ()
+clearScreenOnly = do
+    System.system "clear"
+    return ()

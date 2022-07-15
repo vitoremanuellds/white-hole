@@ -7,8 +7,8 @@ data Movie = Movie {
     movieId :: Integer,
     title :: String,
     releaseDate :: String,
-    summary :: String,
     duration :: String,
+    summary :: String,
     rating :: Float
 } deriving (Show, Read, Eq)
 

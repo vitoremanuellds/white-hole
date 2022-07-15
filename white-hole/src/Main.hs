@@ -8,10 +8,13 @@ import Operations.MovieOperations
 import System.IO
 import System.Exit
 import Operations.SerieOperations (getSeriesWithRatings, updateAllSerieRating)
+import qualified System.Process as System
+import Operations.UtilOperations (clearScreenOnly, clearScreenWithConfirmation)
 
 
 main :: IO ()
 main = do
+    clearScreenOnly
     putStrLn ""
     putStrLn "Conectando com a base de dados... (Aguarde)"
     conn <- connectToDB
@@ -28,7 +31,8 @@ main = do
     putStrLn "Atualizando informações sobre séries... (Aguarde)"
     updateAllSerieRating conn series
     putStrLn ""
-    putStrLn "Tudo pronto!"
+    putStrLn "Tudo pronto! (Aperte Enter para continuar)"
+    clearScreenWithConfirmation
     firstMenu conn
     exitSuccess
 

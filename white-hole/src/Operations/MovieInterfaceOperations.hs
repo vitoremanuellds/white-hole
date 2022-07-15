@@ -33,9 +33,10 @@ createMovie conn = do
     directors <- getLine
     putStrLn "Digite o nome dos atores (separados por vírgula):"
     actors <- getLine
-    let summary = if summaryT == "" then "No comments!" else summaryT
-
+    let summary = if null summaryT then "No comments!" else summaryT
+    putStrLn ""
     putStrLn "Digite a quais categorias esse filme pertence (digite os números associados separados por espaços):"
+    putStrLn ""
     putStrLn "1 - Ação          8  - Fantasia"
     putStrLn "2 - Suspense      9  - Documentário"
     putStrLn "3 - Romance       10 - Drama"
@@ -50,6 +51,7 @@ createMovie conn = do
     confirmation <- getLine
     if null confirmation || map toLower confirmation == "n" then do
         putStrLn "Ok!"
+        clearScreenWithConfirmation
     else do
         movie <- registerMovie conn title releaseDate duration summary
         addCastingToMovie conn movie (splitItems actors [])
@@ -59,6 +61,7 @@ createMovie conn = do
         addCategoriesToMovie conn movie categories
         putStrLn ""
         putStrLn "Filme cadastrado com sucesso!"
+        clearScreenWithConfirmation
 
 
 printMoviesList :: [M.Movie] -> Integer -> IO ()
@@ -79,11 +82,12 @@ tenBestMovies conn user = do
     putStrLn "Digite o número do filme para acessá-lo (aperte enter para voltar):"
     option <- getLine
     if null option then 
-        putStrLn "" 
+        clearScreenOnly
     else if not (isANumber option True) || (((read option :: Int) > length movies) || (read option :: Int) < 1) then do
         putStrLn "Digite uma opção válida na próxima vez."
+        clearScreenWithConfirmation
     else do
-        showMovie conn user (movies !! ((read option :: Int) - 1)) >> tenBestMovies conn user
+        clearScreenOnly >> showMovie conn user (movies !! ((read option :: Int) - 1)) >> tenBestMovies conn user
 
 
 tenBestMoviesByCategory :: Connection -> User -> IO ()
@@ -104,6 +108,7 @@ tenBestMoviesByCategory conn user = do
     option <- getLine
     if not (isANumber option True) || (((read option :: Int) > 14) || (read option :: Int) < 1) then do
         putStrLn "Digite uma opção válida na próxima vez."
+        clearScreenWithConfirmation
     else do 
         putStrLn "Os dez filmes mais bem avaliados no momento são: "
     movies <- getMoviesByCategory conn $ head (convertCategories (words option) [])
@@ -116,8 +121,9 @@ tenBestMoviesByCategory conn user = do
         putStrLn "" 
     else if not (isANumber option True) || (((read option :: Int) > length movies) || (read option :: Int) < 1) || null option then do
         putStrLn "Digite uma opção válida na próxima vez."
+        clearScreenWithConfirmation
     else do
-        showMovie conn user (movies !! ((read option :: Int) - 1)) >> tenBestMoviesByCategory conn user
+        clearScreenOnly >> showMovie conn user (movies !! ((read option :: Int) - 1)) >> tenBestMoviesByCategory conn user
 
 
 showMovie :: Connection -> User -> M.Movie -> IO ()
@@ -146,19 +152,19 @@ showMovie conn user movie = do
     hFlush stdout
     option <- getLine
     case option of
-        "1" -> printCasting conn movie >> showMovie conn user movie
-        "2" -> addToWatchLaterList conn user movie >> putStrLn "Filme adicionado com sucesso na lista!" >> showMovie conn user movie
-        "3" -> newRating conn user movie >> updateMovieRating conn movie >> showMovie conn user movie
-        "4" -> printRatings conn movie >> showMovie conn user movie
-        "5" -> hFlush stdout
-        x -> putStrLn "Digite uma opção válida" >> showMovie conn user movie
+        "1" -> clearScreenOnly >> printCasting conn movie >> showMovie conn user movie
+        "2" -> addToWatchLaterList conn user movie >> putStrLn "Filme adicionado com sucesso na lista!" >> clearScreenWithConfirmation >> showMovie conn user movie
+        "3" -> clearScreenOnly >> newRating conn user movie >> updateMovieRating conn movie >> showMovie conn user movie
+        "4" -> clearScreenOnly >> printRatings conn movie >> showMovie conn user movie
+        "5" -> clearScreenOnly
+        x -> putStrLn "Digite uma opção válida" >> clearScreenWithConfirmation >> showMovie conn user movie
 
 
 
 printCasting :: Connection -> M.Movie -> IO ()
 printCasting conn movie = do
     casting <- getCasting conn movie
-    if null casting then putStrLn "" >> putStrLn "Não há um Casting cadastrado para esse filme!" else putStrLn "" >> printCasting' casting
+    if null casting then putStrLn "" >> putStrLn "Não há um Casting cadastrado para esse filme!" >> clearScreenWithConfirmation else clearScreenOnly >> printCasting' casting
 
 
 printCasting' :: [(String, String)] -> IO ()
@@ -173,21 +179,22 @@ newRating conn user movie = do
     putStrLn ""
     putStrLn "Dê uma nota para o filme (De 1 a 5): "
     nota <- getLine
-    if not (isANumber nota True && (read nota :: Int) `elem` [1..5]) then putStrLn "Digite um valor válido na próxima vez!" >> newRating conn user movie else putStrLn ""
+    if not (isANumber nota True && (read nota :: Int) `elem` [1..5]) then putStrLn "Digite um valor válido na próxima vez!" >> clearScreenWithConfirmation >> newRating conn user movie else putStrLn ""
     putStrLn "Faça um comentário sobre o filme (Se não quiser, basta apertar enter): "
     commentary <- getLine
     putStrLn ""
     putStrLn "Confirmar avaliação (s/N)"
     confirmation <- getLine
-    if null confirmation || map toLower confirmation == "n" then do putStrLn "Ok!" else do putStrLn ""
+    if null confirmation || map toLower confirmation == "n" then do putStrLn "Ok!" else do clearScreenWithConfirmation
     avaluateMovie conn user movie (read nota :: Integer) commentary
     putStrLn "Avaliação feita com sucesso!"
+    clearScreenWithConfirmation
 
 
 printRatings :: Connection -> M.Movie -> IO ()
 printRatings conn movie = do
     ratings <- getRatings conn movie
-    if null ratings then putStrLn "" >> putStrLn "Esse filme ainda não foi avaliado por algum usuário!" else putStrLn "" >> printRatings' ratings
+    if null ratings then putStrLn "" >> putStrLn "Esse filme ainda não foi avaliado por algum usuário!" >> clearScreenWithConfirmation else clearScreenOnly >> printRatings' ratings
 
 
 printRatings' :: [R.Rating] -> IO ()

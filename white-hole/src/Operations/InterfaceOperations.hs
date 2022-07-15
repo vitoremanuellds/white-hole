@@ -15,6 +15,7 @@ import Operations.UtilOperations
 import System.Exit
 import System.IO
 import Operations.SerieOperations
+import qualified System.Process as System
 
 
 signUp :: Connection -> IO()
@@ -31,6 +32,7 @@ signUp conn = do
     {- Chamada da função que cadastra o usuário no banco de dados! -}
     ok <- createUser conn $ User {email=userEmail, password=userPassword, nome=userName, sobrenome=userSurname}
     putStrLn (if ok then "Usuario cadastrado com sucesso!" else "Ja existe usuario cadastrado com esse e-mail!")
+    clearScreenWithConfirmation
 
 
 signIn :: Connection -> IO()
@@ -47,10 +49,12 @@ signIn conn = do
         putStrLn ""
         putStrLn "Bem vindo!"
         user <- getUserByEmail conn userEmail
+        clearScreenWithConfirmation 
         run conn $ head user
     else do
         putStrLn ""
         putStrLn "E-mail ou senha inválidos!"
+        clearScreenWithConfirmation
         
 
 
@@ -67,9 +71,9 @@ firstMenu conn = do
     putStrLn "Digite a opção que deseja acessar:"
     option <- getLine
     if option == "1" then do
-        signIn conn >> firstMenu conn
+        clearScreenOnly >> signIn conn >> firstMenu conn
     else if option == "2" then do
-        signUp conn >> firstMenu conn
+        clearScreenOnly >> signUp conn >> firstMenu conn
     else if option == "3" then do
         putStrLn ""
         putStrLn "Obrigado, tenha um ótimo dia!"
@@ -78,6 +82,7 @@ firstMenu conn = do
         putStrLn ""
         putStrLn "Digite uma opção válida na próxima!"
         putStrLn ""
+        clearScreenWithConfirmation
 
 
 run :: Connection -> User -> IO()
@@ -96,16 +101,17 @@ run conn user = do
     putStrLn "Digite a opção desejada: "
     hFlush stdout
     option <- getLine
+    clearScreenOnly
     case option of
-        "1" -> search conn user >> run conn user
-        "2" -> myList conn user >> run conn user
-        "3" -> tenBestMovies conn user>> run conn user
-        "4" -> tenBestSeries conn user >> run conn user
-        "5" -> tenBestMoviesByCategory conn user >> run conn user
-        "6" -> tenBestSeriesByCategory conn user >> run conn user
-        "7" -> recomendations conn user >> run conn user
+        "1" -> clearScreenOnly >> search conn user >> run conn user
+        "2" -> clearScreenOnly >> myList conn user >> run conn user
+        "3" -> clearScreenOnly >> tenBestMovies conn user >> run conn user
+        "4" -> clearScreenOnly >> tenBestSeries conn user >> run conn user
+        "5" -> clearScreenOnly >> tenBestMoviesByCategory conn user >> run conn user
+        "6" -> clearScreenOnly >> tenBestSeriesByCategory conn user >> run conn user
+        "7" -> clearScreenOnly >> recomendations conn user >> run conn user
         "8" -> putStrLn "" >> putStrLn "Até mais, volte sempre!"
-        x -> putStrLn "Digite uma opção válida" >> run conn user
+        x -> putStrLn "Digite uma opção válida" >> clearScreenWithConfirmation >> run conn user
 
 
 search :: Connection -> User -> IO()
@@ -124,31 +130,30 @@ search conn user = do
         putStrLn "Filmes:"
         putStrLn ""
         printMoviesList movies 1
+        putStrLn ""
         putStrLn "Séries:"
         putStrLn ""
         printSeriesList series (fromIntegral (length movies) + 1)
 
-
     putStrLn ""
-
     putStrLn "Digite o número correspondente ao filme ou a série que quer ver ou as opções abaixo:"
     putStrLn "( p - Pesquisar novamente; v - Voltar ao menu principal; c - Cadastrar um novo filme ou série): "
     putStrLn ""
 
     option <- getLine
     if option == "v" then
-        hFlush stdout
+        clearScreenOnly
     else if option == "p" then
-        search conn user
+        clearScreenOnly >> search conn user
     else if option == "c" then
-        registerMovieSerie conn user
+        clearScreenOnly >> registerMovieSerie conn user
     else if not (isANumber option True) || (((read option :: Int) > (length movies + length series)) || (read option :: Int) < 1) || null option then do
-        putStrLn "Digite uma opção válida na próxima vez."
+        putStrLn "Digite uma opção válida na próxima vez." >> clearScreenWithConfirmation
     else do
         if (read option :: Int) <= length movies then do
-            showMovie conn user (movies !! ((read option :: Int) - 1)) >> search conn user
+            clearScreenOnly >> showMovie conn user (movies !! ((read option :: Int) - 1)) >> search conn user
         else do
-            showSerie conn user (series !! ((read option :: Int) - length movies - 1)) >> search conn user
+            clearScreenOnly >> showSerie conn user (series !! ((read option :: Int) - length movies - 1)) >> search conn user
 
 
 registerMovieSerie :: Connection -> User -> IO ()
@@ -161,10 +166,10 @@ registerMovieSerie conn user = do
     putStrLn "Digite a opção:"
     option <- getLine
     case option of
-        "1" -> createMovie conn >> search conn user
-        "2" -> createSerie conn >> search conn user
-        "v" -> search conn user
-        x -> putStrLn "Digite uma opção válida!" >> registerMovieSerie conn user
+        "1" -> clearScreenOnly >> createMovie conn >> search conn user
+        "2" -> clearScreenOnly >> createSerie conn >> search conn user
+        "v" -> clearScreenOnly >> search conn user
+        x -> putStrLn "Digite uma opção válida!" >> clearScreenWithConfirmation >> registerMovieSerie conn user
 
 
 myList :: Connection -> User -> IO ()
@@ -195,19 +200,19 @@ myList conn user = do
         putStrLn "Qual filme ou série você quer acessar? (Digite o número do filme/série da lista)"
         choice <- getLine
         if (read choice :: Int) > length movies + length series || (read choice :: Int) <= 0 then do
-            putStrLn "digite uma opção válida"
+            putStrLn "digite uma opção válida" >> clearScreenWithConfirmation
             myList conn user
         else do
             if (read choice :: Int) <= length movies then do
-                showMovie conn user (movies !! ((read choice :: Int) - 1)) >> myList conn user
+                clearScreenOnly >> showMovie conn user (movies !! ((read choice :: Int) - 1)) >> myList conn user
             else do
-                showSerie conn user (series !! ((read choice :: Int) - length movies - 1)) >> myList conn user
+                clearScreenOnly >> showSerie conn user (series !! ((read choice :: Int) - length movies - 1)) >> myList conn user
 
     else do
         if option == "2" then do
-            hFlush stdout
+            clearScreenOnly
         else do
-            putStrLn "Digite uma opção válida"
+            putStrLn "Digite uma opção válida" >> clearScreenWithConfirmation
             myList conn user
 
 

@@ -92,7 +92,8 @@ updateMovieRating :: Connection -> M.Movie -> IO Float
 updateMovieRating conn movie = do
     ratings <- showMovieRating conn movie
     let q = fromIntegral (fst $ head ratings) / fromIntegral (snd $ head ratings)
-    execute conn "UPDATE movies SET rating = ? WHERE movieid = ?;" (q :: Float, M.movieId movie)
+    let r = fromIntegral (round (q * 10)) / 10
+    execute conn "UPDATE movies SET rating = ? WHERE movieid = ?;" (r :: Float, M.movieId movie)
     return q
 
 

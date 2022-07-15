@@ -89,7 +89,8 @@ updateSerieRating :: Connection -> S.Serie -> IO Float
 updateSerieRating conn serie = do
     ratings <- showSerieRating conn serie
     let q = fromIntegral (fst $ head ratings) / fromIntegral (snd $ head ratings)
-    execute conn "UPDATE series SET rating = ? WHERE seriesid = ?;" (q :: Float, S.serieId serie)
+    let r = fromIntegral (round (q * 10)) / 10
+    execute conn "UPDATE series SET rating = ? WHERE seriesid = ?;" (r :: Float, S.serieId serie)
     return q
 
 
