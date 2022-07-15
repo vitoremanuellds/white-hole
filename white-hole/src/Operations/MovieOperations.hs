@@ -1,4 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use foldr" #-}
 module Operations.MovieOperations where
 import Database.PostgreSQL.Simple
 import Entities.User
@@ -6,7 +8,9 @@ import qualified Entities.Movie as M
 import qualified Entities.Rating as R
 import Operations.UserOperations (userAlreadyExists)
 import Data.List
-import Data.Char (toLower)
+import Data.Char (toLower, isDigit)
+import Text.Read (Lexeme(String))
+import Operations.UtilOperations (isANumber)
 
 
 avaluateMovie :: Connection -> User -> M.Movie -> Integer -> String -> IO Bool
@@ -89,3 +93,39 @@ getWatchLaterList :: Connection -> User -> IO [M.Movie]
 getWatchLaterList conn user = do
     query conn "SELECT m.movieid, m.title, m.releasedate, m.duration, m.summary, m.rating FROM (watchlaterlist w JOIN movies m ON w.movieid=m.movieid) WHERE w.useremail = ?;" [email user] :: IO [M.Movie]
 
+
+getCategoriesOfMoviesInOneString :: Connection -> M.Movie -> IO String
+getCategoriesOfMoviesInOneString conn movie = do
+    categories <- query conn "SELECT * FROM categories WHERE movieid = ?;" [M.movieId movie] :: IO [(Integer, String)]
+    let result = init $ concatenateWithComma (map snd categories)
+    return result
+
+
+concatenateWithComma :: [String] -> String
+concatenateWithComma [] = []
+concatenateWithComma (x:xs) = " " ++ x ++ "," ++ concatenateWithComma xs
+
+
+addCategoriesToMovie :: Connection -> M.Movie -> [String] -> IO Bool
+addCategoriesToMovie conn movie [] = return True
+addCategoriesToMovie conn movie categories = do
+    execute conn "INSERT INTO categories VALUES (?,?)" (M.movieId movie, head categories)
+    addDirectorsToMovie conn movie (tail categories)
+
+
+verifyCategories :: [String] -> IO Bool
+verifyCategories [] = return True
+verifyCategories (x:xs) = do
+    result <- verifyCategories xs
+    return (isANumber x True && (read x :: Integer) `elem` [1..14] && result)
+
+
+convertCategories :: [String] -> [String] -> [String]
+convertCategories [] result = reverse result
+convertCategories (x:xs) result = do
+    let categories = ["ação","suspense","romance","comédia","terror","aventura","investigação","fantasia","documentário","drama","anime","mistério","infantil","ficção científica"]
+    convertCategories xs (categories !! ((read x :: Int) - 1):result)
+
+
+
+    

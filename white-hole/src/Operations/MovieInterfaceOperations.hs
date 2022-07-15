@@ -32,10 +32,23 @@ createMovie conn = do
     directors <- getLine
     putStrLn "Digite o nome dos atores (separados por vírgula):"
     actors <- getLine
+    putStrLn "Digite a quais categorias esse filme pertence (digite os números associados):"
+    putStrLn "1 - Ação          8  - Fantasia"
+    putStrLn "2 - Suspense      9  - Documentário"
+    putStrLn "3 - Romance       10 - Drama"
+    putStrLn "4 - Comédia       11 - Anime"
+    putStrLn "5 - Terror        12 - Mistério"
+    putStrLn "6 - Aventura      13 - Infantil"
+    putStrLn "7 - Investigação  14 - Ficção científica"
+    putStrLn ""
+    categoriesTemp <- getLine
     let summary = if summaryT == "" then "No comments!" else summaryT
     movie <- registerMovie conn title releaseDate duration summary
     addCastingToMovie conn movie (splitItems actors [])
     addDirectorsToMovie conn movie (splitItems directors [])
+    verified <- verifyCategories (words categoriesTemp)
+    let categories = if verified then convertCategories (words categoriesTemp) [] else []
+    addCategoriesToMovie conn movie categories
     putStrLn ""
     putStrLn "Filme cadastrado com sucesso!"
 
@@ -60,14 +73,16 @@ showMovie conn user movie = do
     putStrLn "-------------------------------------------------"
     putStrLn (M.title movie)
     putStrLn "-------------------------------------------------"
-    putStrLn ("Duração: " ++ M.summary movie)
+    putStrLn ("Duração (em minutos): " ++ M.summary movie)
     putStrLn ("Data de lançamento: " ++ M.releaseDate movie)
+    categories <- getCategoriesOfMoviesInOneString conn movie
+    putStrLn ("Categorias: " ++ categories)
     putStrLn ""
     putStrLn "1 - Mostrar casting do filme."
     putStrLn "2 - Marcar como assistir depois."
     putStrLn "3 - Avaliar filme."
     putStrLn "4 - Mostrar avaliações do filme."
-    putStrLn "5 - Voltar ao menu."
+    putStrLn "5 - Voltar."
     putStrLn ""
     putStrLn "Digite a opção desejada: "
     hFlush stdout

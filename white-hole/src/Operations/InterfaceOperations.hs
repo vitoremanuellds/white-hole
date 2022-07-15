@@ -123,7 +123,7 @@ search conn user = do
 
     option <- getLine
     if option == "v" then
-        run conn user
+        hFlush stdout
     else if option == "p" then
         search conn user
     else if option == "c" then
