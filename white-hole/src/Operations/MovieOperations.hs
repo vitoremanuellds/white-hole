@@ -10,7 +10,7 @@ import Operations.UserOperations (userAlreadyExists)
 import Data.List
 import Data.Char (toLower, isDigit)
 import Text.Read (Lexeme(String))
-import Operations.UtilOperations (isANumber)
+import Operations.UtilOperations (isANumber, concatenateWithComma)
 
 
 avaluateMovie :: Connection -> User -> M.Movie -> Integer -> String -> IO Bool
@@ -84,9 +84,7 @@ addDirectorsToMovie conn movie directors = do
 
 showMovieRating :: Connection -> M.Movie -> IO [(Integer, Integer)]
 showMovieRating conn movie = do
-    ratings <- query conn "SELECT SUM(rating), COUNT(rating) FROM ratings WHERE movieid=?;" [M.movieId movie] :: IO [(Integer, Integer)]
-    {-execute conn "UPDATE movies SET rating = ? WHERE movieid = ?;" (fst ratings, M.movieId movie)-}
-    return ratings
+    query conn "SELECT SUM(rating), COUNT(rating) FROM ratings WHERE movieid=?;" [M.movieId movie] :: IO [(Integer, Integer)]
 
 
 updateMovieRating :: Connection -> M.Movie -> IO Float
@@ -113,15 +111,15 @@ getMoviesWithRatings conn = do
 getMoviesByCategory :: Connection -> String -> IO [M.Movie]
 getMoviesByCategory conn category = do
     query conn "select movieid, title, releasedate, duration, summary, rating from ((select movieid as mid, category  from categories c where category = ?) as c join movies m on c.mid = m.movieid) order by rating desc limit 10;" [category] :: IO [M.Movie]
-    
-    
+
+
 
 getMoviesById :: Connection -> [Integer] -> [M.Movie] -> IO [M.Movie]
 getMoviesById conn [] result = return result
 getMoviesById conn (x:xs) result = do
     movie <- query conn "SELECT * FROM movies WHERE movieid = ?" [x] :: IO [M.Movie]
     getMoviesById conn xs (head movie:result)
-    
+
 
 
 getWatchLaterList :: Connection -> User -> IO [M.Movie]
@@ -136,30 +134,11 @@ getCategoriesOfMoviesInOneString conn movie = do
     return result
 
 
-concatenateWithComma :: [String] -> String
-concatenateWithComma [] = []
-concatenateWithComma (x:xs) = " " ++ x ++ "," ++ concatenateWithComma xs
-
-
 addCategoriesToMovie :: Connection -> M.Movie -> [String] -> IO Bool
 addCategoriesToMovie conn movie [] = return True
 addCategoriesToMovie conn movie categories = do
     execute conn "INSERT INTO categories VALUES (?,?)" (M.movieId movie, head categories)
     addCategoriesToMovie conn movie (tail categories)
-
-
-verifyCategories :: [String] -> IO Bool
-verifyCategories [] = return True
-verifyCategories (x:xs) = do
-    result <- verifyCategories xs
-    return (isANumber x True && (read x :: Integer) `elem` [1..14] && result)
-
-
-convertCategories :: [String] -> [String] -> [String]
-convertCategories [] result = reverse result
-convertCategories (x:xs) result = do
-    let categories = ["ação","suspense","romance","comédia","terror","aventura","investigação","fantasia","documentário","drama","anime","mistério","infantil","ficção científica"]
-    convertCategories xs (categories !! ((read x :: Int) - 1):result)
 
 
 getRecomendationsOfMovies :: Connection -> User -> [M.Movie]

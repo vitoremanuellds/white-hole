@@ -126,12 +126,15 @@ showMovie conn user movie = do
     putStrLn "-------------------------------------------------"
     putStrLn (M.title movie)
     putStrLn "-------------------------------------------------"
-    putStrLn ("Duração (em minutos): " ++ M.summary movie)
+    putStrLn ""
+    putStrLn ("Sinopse: " ++ M.summary movie)
+    putStrLn ""
+    putStrLn ("Duração (em minutos): " ++ M.duration movie)
     putStrLn ("Data de lançamento: " ++ M.releaseDate movie)
     categories <- getCategoriesOfMoviesInOneString conn movie
     putStrLn ("Categorias: " ++ categories)
-    rating <- updateMovieRating conn movie
-    putStrLn ("Nota geral: " ++ show rating)
+    putStrLn ""
+    putStrLn ("Nota geral: " ++ show (M.rating movie))
     putStrLn ""
     putStrLn "1 - Mostrar casting do filme."
     putStrLn "2 - Marcar como assistir depois."
@@ -145,7 +148,7 @@ showMovie conn user movie = do
     case option of
         "1" -> printCasting conn movie >> showMovie conn user movie
         "2" -> addToWatchLaterList conn user movie >> putStrLn "Filme adicionado com sucesso na lista!" >> showMovie conn user movie
-        "3" -> newRating conn user movie >> showMovie conn user movie
+        "3" -> newRating conn user movie >> updateMovieRating conn movie >> showMovie conn user movie
         "4" -> printRatings conn movie >> showMovie conn user movie
         "5" -> hFlush stdout
         x -> putStrLn "Digite uma opção válida" >> showMovie conn user movie

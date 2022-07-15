@@ -46,3 +46,13 @@ addToWatchLaterList conn user movie = do
         return True
     else do
         return False
+
+
+addToWatchLaterListSeries :: Connection -> User -> S.Serie -> IO Bool
+addToWatchLaterListSeries conn user serie = do
+    userExists <- userAlreadyExists conn $ email user
+    if userExists then do
+        execute conn "INSERT INTO watchlaterlistseries values (?,?)" (email user, S.serieId serie)
+        return True
+    else do
+        return False

@@ -14,6 +14,7 @@ import Operations.SerieInterfaceOperations
 import Operations.UtilOperations
 import System.Exit
 import System.IO
+import Operations.SerieOperations
 
 
 signUp :: Connection -> IO()
@@ -83,7 +84,7 @@ run :: Connection -> User -> IO()
 run conn user = do
     putStrLn ("Olá " ++ nome user ++ "!")
     putStrLn ""
-    putStrLn "1 - Procurar por filme"
+    putStrLn "1 - Procurar por filme ou série"
     putStrLn "2 - Minha lista de marcados para assistir depois"
     putStrLn "3 - 10 melhores filmes"
     putStrLn "4 - 10 melhores séries"
@@ -99,9 +100,9 @@ run conn user = do
         "1" -> search conn user >> run conn user
         "2" -> myList conn user >> run conn user
         "3" -> tenBestMovies conn user>> run conn user
-        "4" -> tenBestSeries conn>> run conn user
+        "4" -> tenBestSeries conn user >> run conn user
         "5" -> tenBestMoviesByCategory conn user >> run conn user
-        "6" -> tenBestSeriesByCategory conn >> run conn user
+        "6" -> tenBestSeriesByCategory conn user >> run conn user
         "7" -> recomendations conn user >> run conn user
         "8" -> putStrLn "" >> putStrLn "Até mais, volte sempre!"
         x -> putStrLn "Digite uma opção válida" >> run conn user
@@ -113,13 +114,24 @@ search conn user = do
     putStrLn ""
     putStrLn "Digite o nome do filme ou série que deseja pesquisar (Se quiser voltar, aperte enter e digite 'v'):"
     putStrLn ""
-    movie <- getLine
+    title <- getLine
     putStrLn ""
-    movies <- searchMovie conn (map toLower movie)
-    if null movies then putStrLn "Não foi encontrado nenhum filme ou série com esse título!" else printMoviesList movies 1
+    movies <- searchMovie conn (map toLower title)
+    series <- searchSerie conn (map toLower title)
+    if null movies && null series then do
+        putStrLn "Não foi encontrado nenhum filme ou série com esse título!" 
+    else do
+        putStrLn "Filmes:"
+        putStrLn ""
+        printMoviesList movies 1
+        putStrLn "Séries:"
+        putStrLn ""
+        printSeriesList series (fromIntegral (length movies) + 1)
+
+
     putStrLn ""
 
-    putStrLn "Digite o número correspondente ao filme que quer ver ou as opções abaixo:"
+    putStrLn "Digite o número correspondente ao filme ou a série que quer ver ou as opções abaixo:"
     putStrLn "( p - Pesquisar novamente; v - Voltar ao menu principal; c - Cadastrar um novo filme ou série): "
     putStrLn ""
 
@@ -130,10 +142,13 @@ search conn user = do
         search conn user
     else if option == "c" then
         registerMovieSerie conn user
-    else if not (isANumber option True) || (((read option :: Int) > length movies) || (read option :: Int) < 1) || null option then do
+    else if not (isANumber option True) || (((read option :: Int) > (length movies + length series)) || (read option :: Int) < 1) || null option then do
         putStrLn "Digite uma opção válida na próxima vez."
     else do
-        showMovie conn user (movies !! ((read option :: Int) - 1)) >> search conn user
+        if (read option :: Int) <= length movies then do
+            showMovie conn user (movies !! ((read option :: Int) - 1)) >> search conn user
+        else do
+            showSerie conn user (series !! ((read option :: Int) - length movies - 1)) >> search conn user
 
 
 registerMovieSerie :: Connection -> User -> IO ()
@@ -157,27 +172,37 @@ myList conn user = do
     putStrLn "------ Minha Lista Para Assistir Depois ------"
     putStrLn ""
     movies <- getWatchLaterList conn user
+    series <- getWatchLaterListSeries conn user
     if null movies then do
         print "Lista vazia"
     else do
+        putStrLn "Filmes:"
+        putStrLn ""
         printMoviesList movies 1
+        putStrLn "Séries:"
+        putStrLn ""
+        printSeriesList series (fromIntegral (length movies) + 1)
     putStrLn ""
     putStrLn "Opções:"
     putStrLn ""
-    putStrLn "1 - Acessar filme"
+    putStrLn "1 - Acessar filme ou série"
     putStrLn "2 - Voltar"
     putStrLn ""
     putStrLn "Digite sua ação"
     option <- getLine
     if option == "1" then do
         putStrLn ""
-        putStrLn "Qual filme você quer acessar? (Digite o número do filme da lista)"
-        filme <- getLine
-        if (read filme :: Int) > length movies || (read filme :: Int) <= 0 then do
+        putStrLn "Qual filme ou série você quer acessar? (Digite o número do filme/série da lista)"
+        choice <- getLine
+        if (read choice :: Int) > length movies + length series || (read choice :: Int) <= 0 then do
             putStrLn "digite uma opção válida"
             myList conn user
         else do
-            showMovie conn user (movies !! ((read filme :: Int) - 1)) >> myList conn user
+            if (read choice :: Int) <= length movies then do
+                showMovie conn user (movies !! ((read choice :: Int) - 1)) >> myList conn user
+            else do
+                showSerie conn user (series !! ((read choice :: Int) - length movies - 1)) >> myList conn user
+
     else do
         if option == "2" then do
             hFlush stdout

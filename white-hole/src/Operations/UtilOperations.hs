@@ -20,3 +20,21 @@ splitItems names result = do
 
 capitalize :: String -> String
 capitalize name = toUpper (head name) : tail name
+
+verifyCategories :: [String] -> IO Bool
+verifyCategories [] = return True
+verifyCategories (x:xs) = do
+    result <- verifyCategories xs
+    return (isANumber x True && (read x :: Integer) `elem` [1..14] && result)
+
+
+convertCategories :: [String] -> [String] -> [String]
+convertCategories [] result = reverse result
+convertCategories (x:xs) result = do
+    let categories = ["ação","suspense","romance","comédia","terror","aventura","investigação","fantasia","documentário","drama","anime","mistério","infantil","ficção científica"]
+    convertCategories xs (categories !! ((read x :: Int) - 1):result)
+
+
+concatenateWithComma :: [String] -> String
+concatenateWithComma [] = []
+concatenateWithComma (x:xs) = " " ++ x ++ "," ++ concatenateWithComma xs

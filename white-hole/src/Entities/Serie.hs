@@ -6,7 +6,7 @@ data Serie = Serie {
     serieId :: Integer,
     title :: String,
     releaseDate :: String,
-    episodes :: Int,
+    episodes :: String,
     summary :: String,
     rating :: Float
 } deriving (Show, Read, Eq)
