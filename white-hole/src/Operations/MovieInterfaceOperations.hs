@@ -32,7 +32,9 @@ createMovie conn = do
     directors <- getLine
     putStrLn "Digite o nome dos atores (separados por vírgula):"
     actors <- getLine
-    putStrLn "Digite a quais categorias esse filme pertence (digite os números associados):"
+    let summary = if summaryT == "" then "No comments!" else summaryT
+
+    putStrLn "Digite a quais categorias esse filme pertence (digite os números associados separados por espaços):"
     putStrLn "1 - Ação          8  - Fantasia"
     putStrLn "2 - Suspense      9  - Documentário"
     putStrLn "3 - Romance       10 - Drama"
@@ -41,16 +43,21 @@ createMovie conn = do
     putStrLn "6 - Aventura      13 - Infantil"
     putStrLn "7 - Investigação  14 - Ficção científica"
     putStrLn ""
+
     categoriesTemp <- getLine
-    let summary = if summaryT == "" then "No comments!" else summaryT
-    movie <- registerMovie conn title releaseDate duration summary
-    addCastingToMovie conn movie (splitItems actors [])
-    addDirectorsToMovie conn movie (splitItems directors [])
-    verified <- verifyCategories (words categoriesTemp)
-    let categories = if verified then convertCategories (words categoriesTemp) [] else []
-    addCategoriesToMovie conn movie categories
-    putStrLn ""
-    putStrLn "Filme cadastrado com sucesso!"
+    putStrLn "Quer realmente adicionar esse filme? (s/N)"
+    confirmation <- getLine
+    if null confirmation || map toLower confirmation == "n" then do
+        putStrLn "Ok!"
+    else do
+        movie <- registerMovie conn title releaseDate duration summary
+        addCastingToMovie conn movie (splitItems actors [])
+        addDirectorsToMovie conn movie (splitItems directors [])
+        verified <- verifyCategories (words categoriesTemp)
+        let categories = if verified then convertCategories (words categoriesTemp) [] else []
+        addCategoriesToMovie conn movie categories
+        putStrLn ""
+        putStrLn "Filme cadastrado com sucesso!"
 
 
 printMoviesList :: [M.Movie] -> Integer -> IO ()
@@ -100,13 +107,15 @@ showMovie conn user movie = do
 printCasting :: Connection -> M.Movie -> IO ()
 printCasting conn movie = do
     casting <- getCasting conn movie
-    printCasting' casting
+    if null casting then putStrLn "Não há um Casting cadastrado para esse filme!" else printCasting' casting
+
 
 printCasting' :: [(String, String)] -> IO ()
 printCasting' [] = return ()
 printCasting' (x:xs) = do
     putStrLn ("* " ++ fst x ++ " - " ++ capitalize (snd x))
     printCasting' xs
+
 
 newRating :: Connection -> User -> M.Movie -> IO ()
 newRating conn user movie = do
@@ -123,7 +132,7 @@ newRating conn user movie = do
 printRatings :: Connection -> M.Movie -> IO ()
 printRatings conn movie = do
     ratings <- getRatings conn movie
-    printRatings' ratings
+    if null ratings then putStrLn "Esse filme ainda não foi avaliado por algum usuário!" else printRatings' ratings
 
 
 printRatings' :: [R.Rating] -> IO ()

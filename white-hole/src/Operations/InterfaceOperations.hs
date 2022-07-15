@@ -109,7 +109,7 @@ search :: Connection -> User -> IO()
 search conn user = do
     putStrLn "---------------------- PESQUISAR ------------------------"
     putStrLn ""
-    putStrLn "Digite o nome do filme ou série que deseja pesquisar"
+    putStrLn "Digite o nome do filme ou série que deseja pesquisar (Se quiser voltar, aperte enter e digite 'v'):"
     putStrLn ""
     movie <- getLine
     putStrLn ""
@@ -139,12 +139,14 @@ registerMovieSerie conn user = do
     putStrLn ""
     putStrLn "1 - Adicionar filme"
     putStrLn "2 - Adicionar série"
+    putStrLn "v - Voltar"
     putStrLn ""
     putStrLn "Digite a opção:"
     option <- getLine
     case option of
         "1" -> createMovie conn >> search conn user
         "2" -> createSerie conn >> search conn user
+        "v" -> search conn user
         x -> putStrLn "Digite uma opção válida!" >> registerMovieSerie conn user
 
 

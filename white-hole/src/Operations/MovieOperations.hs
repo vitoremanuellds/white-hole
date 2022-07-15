@@ -97,7 +97,7 @@ getWatchLaterList conn user = do
 getCategoriesOfMoviesInOneString :: Connection -> M.Movie -> IO String
 getCategoriesOfMoviesInOneString conn movie = do
     categories <- query conn "SELECT * FROM categories WHERE movieid = ?;" [M.movieId movie] :: IO [(Integer, String)]
-    let result = init $ concatenateWithComma (map snd categories)
+    let result = if not (null categories) then init $ concatenateWithComma (map snd categories) else ""
     return result
 
 
@@ -110,7 +110,7 @@ addCategoriesToMovie :: Connection -> M.Movie -> [String] -> IO Bool
 addCategoriesToMovie conn movie [] = return True
 addCategoriesToMovie conn movie categories = do
     execute conn "INSERT INTO categories VALUES (?,?)" (M.movieId movie, head categories)
-    addDirectorsToMovie conn movie (tail categories)
+    addCategoriesToMovie conn movie (tail categories)
 
 
 verifyCategories :: [String] -> IO Bool
