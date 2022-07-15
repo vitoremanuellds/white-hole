@@ -134,13 +134,40 @@ addCategoriesToSerie conn serie categories = do
     addCategoriesToSerie conn serie (tail categories)
 
 
-getRecomendationsOfSeries :: Connection -> User -> [S.Serie]
-getRecomendationsOfSeries conn user = undefined
+getRecomendationsOfSeries :: Connection -> User -> IO [S.Serie]
+getRecomendationsOfSeries conn user = do
+    users <- getUsersWhoAvaluateSeries conn
+    avaluateRecomendationsSeries conn users user
+
+
+avaluateRecomendationsSeries :: Connection -> [User] -> User -> IO [S.Serie]
+avaluateRecomendationsSeries conn [] user = return []
+avaluateRecomendationsSeries conn (x:xs) user = do
+    series <- getSeriesAvaluatedByUser conn x
+    mySeries <- getSeriesAvaluatedByUser conn user
+    let alike = series `intersect` mySeries
+    if length alike > (length mySeries `div` 2) + 1 then do
+        nexts <- avaluateRecomendationsSeries conn xs user
+        return ((series \\ mySeries) ++ nexts)
+    else do
+        avaluateRecomendationsSeries conn xs user
 
 
 
-getAvaluations :: Connection -> User -> [(String, String, Integer, String)]
-getAvaluations conn user = undefined
+getAvaluationsSeries :: Connection -> User -> IO [R.Rating]
+getAvaluationsSeries conn user = do
+    query conn "select * from seriesratings r where useremail = ?;" [email user] :: IO [R.Rating]
+
+
+getSeriesAvaluatedByUser :: Connection -> User -> IO [S.Serie]
+getSeriesAvaluatedByUser conn user = do
+    seriesId <- query conn "select serieid, ratingid from seriesratings r where useremail = ?;" [email user] :: IO [(Integer, Integer)]
+    getSeriesById conn (map fst seriesId) []
+
+
+getUsersWhoAvaluateSeries :: Connection -> IO [User]
+getUsersWhoAvaluateSeries conn = do
+    query_ conn "select useremail from seriesratings r group by useremail;" :: IO [User]
 
 
 getWatchLaterListSeries :: Connection -> User -> IO [S.Serie]

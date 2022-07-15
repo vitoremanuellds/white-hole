@@ -11,6 +11,7 @@ import Data.List
 import Data.Char (toLower, isDigit)
 import Text.Read (Lexeme(String))
 import Operations.UtilOperations (isANumber, concatenateWithComma)
+import GHC.RTS.Flags (TraceFlags(user))
 
 
 avaluateMovie :: Connection -> User -> M.Movie -> Integer -> String -> IO Bool
@@ -141,13 +142,37 @@ addCategoriesToMovie conn movie categories = do
     addCategoriesToMovie conn movie (tail categories)
 
 
-getRecomendationsOfMovies :: Connection -> User -> [M.Movie]
-getRecomendationsOfMovies conn user = undefined
+getRecomendationsOfMovies :: Connection -> User -> IO [M.Movie]
+getRecomendationsOfMovies conn user = do
+    users <- getUsersWhoAvaluate conn
+    avaluateRecomendations conn users user
+
+
+avaluateRecomendations :: Connection -> [User] -> User -> IO [M.Movie]
+avaluateRecomendations conn [] user = return []
+avaluateRecomendations conn (x:xs) user = do
+    movies <- getMoviesAvaluatedByUser conn x
+    myMovies <- getMoviesAvaluatedByUser conn user
+    let alike = movies `intersect` myMovies
+    if length alike > (length myMovies `div` 2) + 1 then do
+        nexts <- avaluateRecomendations conn xs user
+        return ((movies \\ myMovies) ++ nexts)
+    else do
+        avaluateRecomendations conn xs user
 
 
 
-getAvaluations :: Connection -> User -> [(String, String, Integer, String)]
-getAvaluations conn user = undefined
+getAvaluations :: Connection -> User -> IO [R.Rating]
+getAvaluations conn user = do
+    query conn "select * from ratings r where useremail = ?;" [email user] :: IO [R.Rating]
 
 
+getMoviesAvaluatedByUser :: Connection -> User -> IO [M.Movie]
+getMoviesAvaluatedByUser conn user = do
+    moviesId <- query conn "select movieid, ratingid from ratings r where useremail = ?;" [email user] :: IO [(Integer, Integer)]
+    getMoviesById conn (map fst moviesId) []
 
+
+getUsersWhoAvaluate :: Connection -> IO [User]
+getUsersWhoAvaluate conn = do
+    query_ conn "select useremail  from ratings r group by useremail;" :: IO [User]

@@ -223,5 +223,11 @@ recomendations conn user = do
     putStrLn ""
     putStrLn "Filmes:"
     putStrLn ""
-    {-movies <- getRecomendationsOfMovies conn user-}
+    movies <- getRecomendationsOfMovies conn user
+    series <- getRecomendationsOfSeries conn user
+    if null movies then tenBestMovies conn user else printMoviesList movies 1
+    putStrLn ""
+    putStrLn "Séries:"
+    putStrLn ""
+    if null series then tenBestSeries conn user else printSeriesList series (fromIntegral (length movies + 1))
     putStrLn ""
