@@ -77,6 +77,7 @@ tenBestMoviesByCategory conn = undefined
 
 showMovie :: Connection -> User -> M.Movie -> IO ()
 showMovie conn user movie = do
+    putStrLn ""
     putStrLn "-------------------------------------------------"
     putStrLn (M.title movie)
     putStrLn "-------------------------------------------------"
@@ -107,7 +108,7 @@ showMovie conn user movie = do
 printCasting :: Connection -> M.Movie -> IO ()
 printCasting conn movie = do
     casting <- getCasting conn movie
-    if null casting then putStrLn "Não há um Casting cadastrado para esse filme!" else printCasting' casting
+    if null casting then putStrLn "" >> putStrLn "Não há um Casting cadastrado para esse filme!" else putStrLn "" >> printCasting' casting
 
 
 printCasting' :: [(String, String)] -> IO ()
@@ -132,7 +133,7 @@ newRating conn user movie = do
 printRatings :: Connection -> M.Movie -> IO ()
 printRatings conn movie = do
     ratings <- getRatings conn movie
-    if null ratings then putStrLn "Esse filme ainda não foi avaliado por algum usuário!" else printRatings' ratings
+    if null ratings then putStrLn "" >> putStrLn "Esse filme ainda não foi avaliado por algum usuário!" else putStrLn "" >> printRatings' ratings
 
 
 printRatings' :: [R.Rating] -> IO ()
