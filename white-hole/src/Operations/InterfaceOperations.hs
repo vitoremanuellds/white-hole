@@ -89,7 +89,8 @@ run conn user = do
     putStrLn "4 - 10 melhores séries"
     putStrLn "5 - 10 melhores filmes por categoria"
     putStrLn "6 - 10 melhores séries por categoria"
-    putStrLn "7 - Logout"
+    putStrLn "7 - Recomendações para mim"
+    putStrLn "8 - Logout"
     putStrLn ""
     putStrLn "Digite a opção desejada: "
     hFlush stdout
@@ -97,11 +98,12 @@ run conn user = do
     case option of
         "1" -> search conn user >> run conn user
         "2" -> myList conn user >> run conn user
-        "3" -> tenBestMovies conn >> run conn user
-        "4" -> tenBestSeries conn >> run conn user
-        "5" -> tenBestMoviesByCategory conn >> run conn user
+        "3" -> tenBestMovies conn user>> run conn user
+        "4" -> tenBestSeries conn>> run conn user
+        "5" -> tenBestMoviesByCategory conn user >> run conn user
         "6" -> tenBestSeriesByCategory conn >> run conn user
-        "7" -> putStrLn "" >> putStrLn "Até mais, volte sempre!"
+        "7" -> recomendations conn user >> run conn user
+        "8" -> putStrLn "" >> putStrLn "Até mais, volte sempre!"
         x -> putStrLn "Digite uma opção válida" >> run conn user
 
 
@@ -128,7 +130,7 @@ search conn user = do
         search conn user
     else if option == "c" then
         registerMovieSerie conn user
-    else if not (isANumber option True) || (((read option :: Int) > length movies) && (read option :: Int) < 1) then do
+    else if not (isANumber option True) || (((read option :: Int) > length movies) || (read option :: Int) < 1) || null option then do
         putStrLn "Digite uma opção válida na próxima vez."
     else do
         showMovie conn user (movies !! ((read option :: Int) - 1)) >> search conn user
@@ -183,3 +185,18 @@ myList conn user = do
             putStrLn "Digite uma opção válida"
             myList conn user
 
+
+recomendations :: Connection -> User -> IO ()
+recomendations conn user = do
+    putStrLn ""
+    putStrLn "--------------------------------------------------------"
+    putStrLn "Recomendações"
+    putStrLn "--------------------------------------------------------"
+    putStrLn ""
+    putStrLn "Aqui estão algumas recomendações de filmes e séries que "
+    putStrLn "achamos que você vai gostar!"
+    putStrLn ""
+    putStrLn "Filmes:"
+    putStrLn ""
+    {-movies <- getRecomendationsOfMovies conn user-}
+    putStrLn ""

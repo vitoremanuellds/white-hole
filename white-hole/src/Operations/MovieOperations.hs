@@ -82,11 +82,46 @@ addDirectorsToMovie conn movie directors = do
     addDirectorsToMovie conn movie (tail directors)
 
 
+showMovieRating :: Connection -> M.Movie -> IO [(Integer, Integer)]
+showMovieRating conn movie = do
+    ratings <- query conn "SELECT SUM(rating), COUNT(rating) FROM ratings WHERE movieid=?;" [M.movieId movie] :: IO [(Integer, Integer)]
+    {-execute conn "UPDATE movies SET rating = ? WHERE movieid = ?;" (fst ratings, M.movieId movie)-}
+    return ratings
+
+
 updateMovieRating :: Connection -> M.Movie -> IO Float
 updateMovieRating conn movie = do
-    [Only rating] <- query conn "SELECT AVG(rating) FROM ratings WHERE movieid=?;" [M.movieId movie] :: IO [Only Float]
-    execute conn "UPDATE movies SET rating = ? WHERE movieid = ?;" (rating, M.movieId movie)
-    return rating
+    ratings <- showMovieRating conn movie
+    let q = fromIntegral (fst $ head ratings) / fromIntegral (snd $ head ratings)
+    execute conn "UPDATE movies SET rating = ? WHERE movieid = ?;" (q :: Float, M.movieId movie)
+    return q
+
+
+updateAllMovieRating :: Connection -> [M.Movie] -> IO ()
+updateAllMovieRating conn [] = return ()
+updateAllMovieRating conn (x:xs) = do
+    rating <- updateMovieRating conn x
+    updateAllMovieRating conn xs
+
+
+getMoviesWithRatings :: Connection -> IO [M.Movie]
+getMoviesWithRatings conn = do
+    moviesWithRating <- query_ conn "SELECT movieid, count(movieid) FROM ratings group by movieid ;" :: IO [(Integer, Integer)]
+    getMoviesById conn (map fst moviesWithRating) []
+
+
+getMoviesByCategory :: Connection -> String -> IO [M.Movie]
+getMoviesByCategory conn category = do
+    query conn "select movieid, title, releasedate, duration, summary, rating from ((select movieid as mid, category  from categories c where category = ?) as c join movies m on c.mid = m.movieid) order by rating desc limit 10;" [category] :: IO [M.Movie]
+    
+    
+
+getMoviesById :: Connection -> [Integer] -> [M.Movie] -> IO [M.Movie]
+getMoviesById conn [] result = return result
+getMoviesById conn (x:xs) result = do
+    movie <- query conn "SELECT * FROM movies WHERE movieid = ?" [x] :: IO [M.Movie]
+    getMoviesById conn xs (head movie:result)
+    
 
 
 getWatchLaterList :: Connection -> User -> IO [M.Movie]
@@ -127,5 +162,13 @@ convertCategories (x:xs) result = do
     convertCategories xs (categories !! ((read x :: Int) - 1):result)
 
 
+getRecomendationsOfMovies :: Connection -> User -> [M.Movie]
+getRecomendationsOfMovies conn user = undefined
 
-    
+
+
+getAvaluations :: Connection -> User -> [(String, String, Integer, String)]
+getAvaluations conn user = undefined
+
+
+

@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Operations.MovieInterfaceOperations where
 
 import Database.PostgreSQL.Simple
@@ -67,12 +68,56 @@ printMoviesList movies seqNum = do
     printMoviesList (tail movies) (seqNum + 1)
 
 
-tenBestMovies :: Connection -> IO ()
-tenBestMovies conn = undefined
+tenBestMovies :: Connection -> User -> IO ()
+tenBestMovies conn user = do
+    putStrLn ""
+    putStrLn "Os dez filmes mais bem avaliados no momento são: "
+    putStrLn ""
+    movies <- query_ conn "select * from movies order by rating desc limit 10;" :: IO [M.Movie] 
+    printMoviesList movies 1
+    putStrLn ""
+    putStrLn "Digite o número do filme para acessá-lo (aperte enter para voltar):"
+    option <- getLine
+    if null option then 
+        putStrLn "" 
+    else if not (isANumber option True) || (((read option :: Int) > length movies) || (read option :: Int) < 1) then do
+        putStrLn "Digite uma opção válida na próxima vez."
+    else do
+        showMovie conn user (movies !! ((read option :: Int) - 1)) >> tenBestMovies conn user
 
 
-tenBestMoviesByCategory :: Connection -> IO ()
-tenBestMoviesByCategory conn = undefined
+tenBestMoviesByCategory :: Connection -> User -> IO ()
+tenBestMoviesByCategory conn user = do
+    putStrLn ""
+    putStrLn "Selecione a categoria que você quer vizualizar:"
+    putStrLn ""
+    putStrLn "1 - Ação          8  - Fantasia"
+    putStrLn "2 - Suspense      9  - Documentário"
+    putStrLn "3 - Romance       10 - Drama"
+    putStrLn "4 - Comédia       11 - Anime"
+    putStrLn "5 - Terror        12 - Mistério"
+    putStrLn "6 - Aventura      13 - Infantil"
+    putStrLn "7 - Investigação  14 - Ficção científica"
+    putStrLn ""
+    putStrLn "Digite o número da categoria:"
+    putStrLn ""
+    option <- getLine
+    if not (isANumber option True) || (((read option :: Int) > 14) || (read option :: Int) < 1) then do
+        putStrLn "Digite uma opção válida na próxima vez."
+    else do 
+        putStrLn "Os dez filmes mais bem avaliados no momento são: "
+    movies <- getMoviesByCategory conn $ head (convertCategories (words option) [])
+    putStrLn ""
+    printMoviesList movies 1
+    putStrLn ""
+    putStrLn "Digite o número do filme para acessá-lo (aperte enter para voltar):"
+    option <- getLine
+    if null option then 
+        putStrLn "" 
+    else if not (isANumber option True) || (((read option :: Int) > length movies) || (read option :: Int) < 1) || null option then do
+        putStrLn "Digite uma opção válida na próxima vez."
+    else do
+        showMovie conn user (movies !! ((read option :: Int) - 1)) >> tenBestMoviesByCategory conn user
 
 
 showMovie :: Connection -> User -> M.Movie -> IO ()
@@ -85,6 +130,8 @@ showMovie conn user movie = do
     putStrLn ("Data de lançamento: " ++ M.releaseDate movie)
     categories <- getCategoriesOfMoviesInOneString conn movie
     putStrLn ("Categorias: " ++ categories)
+    rating <- updateMovieRating conn movie
+    putStrLn ("Nota geral: " ++ show rating)
     putStrLn ""
     putStrLn "1 - Mostrar casting do filme."
     putStrLn "2 - Marcar como assistir depois."
@@ -123,12 +170,16 @@ newRating conn user movie = do
     putStrLn ""
     putStrLn "Dê uma nota para o filme (De 1 a 5): "
     nota <- getLine
-    if not (isANumber nota True) then putStrLn "Digite um valor válido na próxima vez!" >> newRating conn user movie else putStrLn ""
+    if not (isANumber nota True && (read nota :: Int) `elem` [1..5]) then putStrLn "Digite um valor válido na próxima vez!" >> newRating conn user movie else putStrLn ""
     putStrLn "Faça um comentário sobre o filme (Se não quiser, basta apertar enter): "
     commentary <- getLine
     putStrLn ""
+    putStrLn "Confirmar avaliação (s/N)"
+    confirmation <- getLine
+    if null confirmation || map toLower confirmation == "n" then do putStrLn "Ok!" else do putStrLn ""
     avaluateMovie conn user movie (read nota :: Integer) commentary
     putStrLn "Avaliação feita com sucesso!"
+
 
 printRatings :: Connection -> M.Movie -> IO ()
 printRatings conn movie = do
