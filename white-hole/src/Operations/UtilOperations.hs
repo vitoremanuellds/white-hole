@@ -3,6 +3,7 @@ module Operations.UtilOperations where
 
 import Data.Char
 import qualified System.Process as System
+import System.Console.ANSI
 
 
 isANumber :: String -> Bool -> Bool
@@ -46,13 +47,15 @@ clearScreenWithConfirmation = do
     putStrLn ""
     putStrLn "(Aperte Enter)"
     placebo <- getLine
-    System.system "clear"
+    clearScreen
+    setCursorPosition 0 0
     putStrLn ""
 
 
 clearScreenOnly :: IO ()
 clearScreenOnly = do
-    System.system "clear"
+    clearScreen
+    setCursorPosition 0 0
     return ()
 
 
