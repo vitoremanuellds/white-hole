@@ -20,3 +20,5 @@ connectToDB = do
         connectPort = 5432
     }
     connect db
+
+{-let db = defaultConnectInfo {connectHost = host,connectDatabase = database,connectUser = user,connectPassword = password,connectPort = 5432}-}

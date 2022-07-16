@@ -5,7 +5,7 @@ import Database.PostgreSQL.Simple.FromRow
 data Rating = Rating {
     ratingId :: Integer,
     userEmail :: String,
-    movieId :: String,
+    theId :: Integer,
     rating :: Integer,
     commentary :: String
 }

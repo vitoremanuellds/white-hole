@@ -2,11 +2,11 @@ name:                white-hole
 version:             0.1.0.0
 -- synopsis:
 -- description:
-homepage:            https://github.com/githubuser/white-hole#readme
+homepage:            https://github.com/vitoremanuellds/white-hole#readme
 license:             BSD3
 license-file:        LICENSE
-author:              Author name here
-maintainer:          example@example.com
+author:              Vitor Santos, Ana Paula Santos, Junior Silva, Marcus Ideao, Guilherme Matos
+maintainer:          vemanuel.wt@gmail.com
 copyright:           2022 Author name here
 category:            Web
 build-type:          Simple
@@ -17,6 +17,4 @@ executable white-hole
   hs-source-dirs:      src
   main-is:             Main.hs
   default-language:    Haskell2010
-  build-depends:       base >= 4.7 && < 5,
---                       base ^>=4.14.3.0,
-                       postgresql-simple >=0.6.4
+  build-depends:       base >= 4.7 && < 5, postgresql-simple >=0.6.4, time >=1.9.3, process >=1.6.13.2
