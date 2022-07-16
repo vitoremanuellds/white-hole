@@ -21,67 +21,61 @@ createSerie conn = do
     if null $ strip title then do
         putStrLn "A série deve ter um título!"
         clearScreenWithConfirmation
-        return ()
-    else
-        putStrLn "Qual a data de lançamento da série? (yyyy-mm-dd)"
-
-    releaseDate <- getLine
-    if null (strip releaseDate) || length releaseDate /= 10 then do
-        putStrLn "A data deve ser uma data válida!"
-        clearScreenWithConfirmation
-        return () 
-    else do 
-        putStrLn "Qual a quantidade de episódios da série?"
-
-    episodes <- getLine
-    if null (strip episodes) || not (isANumber episodes True) || length episodes > 4 then do
-        putStrLn "Digite uma quantidade de episódios válida"
-        clearScreenWithConfirmation
-        return ()
-    else do 
-        putStrLn "Qual a sinopse da série?"
-
-    summaryT <- getLine
-    putStrLn "Digite o nome dos diretores (separados por vírgula):"
-    directors <- getLine
-    putStrLn "Digite o nome dos atores (separados por vírgula):"
-    actors <- getLine
-    let summary = if null summaryT then "Sem sinopse!" else summaryT
-    putStrLn ""
-    putStrLn "Digite a quais categorias essa série pertence (digite os números associados separados por espaços):"
-    putStrLn ""
-    putStrLn "1 - Ação          8  - Fantasia"
-    putStrLn "2 - Suspense      9  - Documentário"
-    putStrLn "3 - Romance       10 - Drama"
-    putStrLn "4 - Comédia       11 - Anime"
-    putStrLn "5 - Terror        12 - Mistério"
-    putStrLn "6 - Aventura      13 - Infantil"
-    putStrLn "7 - Investigação  14 - Ficção científica"
-    putStrLn ""
-
-    categoriesTemp <- getLine
-    if null (strip categoriesTemp) || not (isANumber categoriesTemp True) then do
-        putStrLn "É necessário que a série tenha ao menos uma categoria!"
-        clearScreenWithConfirmation
-        return ()
-    else do 
-        putStrLn "Quer realmente adicionar essa série? (s/N)"
-
-    confirmation <- getLine
-    if null confirmation || map toLower confirmation == "n" then do
-        putStrLn ""
-        putStrLn "Ok!"
-        clearScreenWithConfirmation
     else do
-        movie <- registerSerie conn title releaseDate episodes summary
-        addCastingToSerie conn movie (splitItems actors [])
-        addDirectorsToSerie conn movie (splitItems directors [])
-        verified <- verifyCategories (words categoriesTemp)
-        let categories = if verified then convertCategories (words categoriesTemp) [] else []
-        addCategoriesToSerie conn movie categories
-        putStrLn ""
-        putStrLn "Série cadastrada com sucesso!"
-        clearScreenWithConfirmation
+        putStrLn "Qual a data de lançamento da série? (yyyy-mm-dd)"
+        releaseDate <- getLine
+        if null (strip releaseDate) || length releaseDate /= 10 then do
+            putStrLn "A data deve ser uma data válida!"
+            clearScreenWithConfirmation
+        else do 
+            putStrLn "Qual a quantidade de episódios da série?"
+            episodes <- getLine
+            if null (strip episodes) || not (isANumber episodes True) || length episodes > 4 then do
+                putStrLn "Digite uma quantidade de episódios válida"
+                clearScreenWithConfirmation
+            else do 
+                putStrLn "Qual a sinopse da série?"
+
+                summaryT <- getLine
+                putStrLn "Digite o nome dos diretores (separados por vírgula):"
+                directors <- getLine
+                putStrLn "Digite o nome dos atores (separados por vírgula):"
+                actors <- getLine
+                let summary = if null summaryT then "Sem sinopse!" else summaryT
+                putStrLn ""
+                putStrLn "Digite a quais categorias essa série pertence (digite os números associados separados por espaços):"
+                putStrLn ""
+                putStrLn "1 - Ação          8  - Fantasia"
+                putStrLn "2 - Suspense      9  - Documentário"
+                putStrLn "3 - Romance       10 - Drama"
+                putStrLn "4 - Comédia       11 - Anime"
+                putStrLn "5 - Terror        12 - Mistério"
+                putStrLn "6 - Aventura      13 - Infantil"
+                putStrLn "7 - Investigação  14 - Ficção científica"
+                putStrLn ""
+
+                categoriesTemp <- getLine
+                if null (strip categoriesTemp) || not (isANumber categoriesTemp True) then do
+                    putStrLn "É necessário que a série tenha ao menos uma categoria!"
+                    clearScreenWithConfirmation
+                else do 
+                    putStrLn "Quer realmente adicionar essa série? (s/N)"
+
+                    confirmation <- getLine
+                    if null confirmation || map toLower confirmation == "n" then do
+                        putStrLn ""
+                        putStrLn "Ok!"
+                        clearScreenWithConfirmation
+                    else do
+                        movie <- registerSerie conn title releaseDate episodes summary
+                        addCastingToSerie conn movie (splitItems actors [])
+                        addDirectorsToSerie conn movie (splitItems directors [])
+                        verified <- verifyCategories (words categoriesTemp)
+                        let categories = if verified then convertCategories (words categoriesTemp) [] else []
+                        addCategoriesToSerie conn movie categories
+                        putStrLn ""
+                        putStrLn "Série cadastrada com sucesso!"
+                        clearScreenWithConfirmation
 
 
 

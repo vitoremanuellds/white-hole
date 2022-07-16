@@ -22,66 +22,61 @@ createMovie conn = do
     if null $ strip title then do
         putStrLn "O filme deve ter um título!"
         clearScreenWithConfirmation
-        return ()
     else do
         putStrLn "Qual a data de lançamento do filme? (yyyy-mm-dd)"
+        releaseDate <- getLine
+        if null (strip releaseDate) || length releaseDate /= 10 then do
+            putStrLn "A data deve ser uma data válida!"
+            clearScreenWithConfirmation
+        else do 
+            putStrLn "Qual a duração do filme? (Em minutos)"
 
-    releaseDate <- getLine
-    if null (strip releaseDate) || length releaseDate /= 10 then do
-        putStrLn "A data deve ser uma data válida!"
-        clearScreenWithConfirmation
-        return () 
-    else do 
-        putStrLn "Qual a duração do filme? (Em minutos)"
+            duration <- getLine
+            if null (strip duration) || not (isANumber duration True) || length duration > 4 then do
+                putStrLn "Digite uma duração válida"
+                clearScreenWithConfirmation
+            else do 
+                putStrLn "Qual a sinopse do filme?"
 
-    duration <- getLine
-    if null (strip duration) || not (isANumber duration True) || length duration > 4 then do
-        putStrLn "Digite uma duração válida"
-        clearScreenWithConfirmation
-        return ()
-    else do 
-        putStrLn "Qual a sinopse do filme?"
+                summaryT <- getLine
+                putStrLn "Digite o nome dos diretores (separados por vírgula):"
+                directors <- getLine
+                putStrLn "Digite o nome dos atores (separados por vírgula):"
+                actors <- getLine
+                let summary = if null summaryT then "Sem sinopse!" else summaryT
+                putStrLn ""
+                putStrLn "Digite a quais categorias esse filme pertence (digite os números associados separados por espaços):"
+                putStrLn ""
+                putStrLn "1 - Ação          8  - Fantasia"
+                putStrLn "2 - Suspense      9  - Documentário"
+                putStrLn "3 - Romance       10 - Drama"
+                putStrLn "4 - Comédia       11 - Anime"
+                putStrLn "5 - Terror        12 - Mistério"
+                putStrLn "6 - Aventura      13 - Infantil"
+                putStrLn "7 - Investigação  14 - Ficção científica"
+                putStrLn ""
+                categoriesTemp <- getLine
+                if null (strip categoriesTemp) || not (isANumber categoriesTemp True) then do
+                    putStrLn "É necessário que o filme tenha ao menos uma categoria!"
+                    clearScreenWithConfirmation
+                else do 
+                    putStrLn "Quer realmente adicionar esse filme? (s/N)"
 
-    summaryT <- getLine
-    putStrLn "Digite o nome dos diretores (separados por vírgula):"
-    directors <- getLine
-    putStrLn "Digite o nome dos atores (separados por vírgula):"
-    actors <- getLine
-    let summary = if null summaryT then "Sem sinopse!" else summaryT
-    putStrLn ""
-    putStrLn "Digite a quais categorias esse filme pertence (digite os números associados separados por espaços):"
-    putStrLn ""
-    putStrLn "1 - Ação          8  - Fantasia"
-    putStrLn "2 - Suspense      9  - Documentário"
-    putStrLn "3 - Romance       10 - Drama"
-    putStrLn "4 - Comédia       11 - Anime"
-    putStrLn "5 - Terror        12 - Mistério"
-    putStrLn "6 - Aventura      13 - Infantil"
-    putStrLn "7 - Investigação  14 - Ficção científica"
-    putStrLn ""
-    categoriesTemp <- getLine
-    if null (strip categoriesTemp) || not (isANumber categoriesTemp True) then do
-        putStrLn "É necessário que o filme tenha ao menos uma categoria!"
-        clearScreenWithConfirmation
-        return ()
-    else do 
-        putStrLn "Quer realmente adicionar esse filme? (s/N)"
-
-    confirmation <- getLine
-    if null confirmation || map toLower confirmation == "n" then do
-        putStrLn ""
-        putStrLn "Ok!"
-        clearScreenWithConfirmation
-    else do
-        movie <- registerMovie conn title releaseDate duration summary
-        addCastingToMovie conn movie (splitItems actors [])
-        addDirectorsToMovie conn movie (splitItems directors [])
-        verified <- verifyCategories (words categoriesTemp)
-        let categories = if verified then convertCategories (words categoriesTemp) [] else []
-        addCategoriesToMovie conn movie categories
-        putStrLn ""
-        putStrLn "Filme cadastrado com sucesso!"
-        clearScreenWithConfirmation
+                    confirmation <- getLine
+                    if null confirmation || map toLower confirmation == "n" then do
+                        putStrLn ""
+                        putStrLn "Ok!"
+                        clearScreenWithConfirmation
+                    else do
+                        movie <- registerMovie conn title releaseDate duration summary
+                        addCastingToMovie conn movie (splitItems actors [])
+                        addDirectorsToMovie conn movie (splitItems directors [])
+                        verified <- verifyCategories (words categoriesTemp)
+                        let categories = if verified then convertCategories (words categoriesTemp) [] else []
+                        addCategoriesToMovie conn movie categories
+                        putStrLn ""
+                        putStrLn "Filme cadastrado com sucesso!"
+                        clearScreenWithConfirmation
 
 
 printMoviesList :: [M.Movie] -> Integer -> IO ()

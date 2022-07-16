@@ -147,9 +147,7 @@ addCategoriesToMovie conn movie categories = do
 
 getRecomendationsOfMovies :: Connection -> User -> IO [M.Movie]
 getRecomendationsOfMovies conn user = do
-    putStrLn "getRecomendationsOfMovies"
     users <- getUsersWhoAvaluateWell conn
-    putStrLn "avaluateRecomendations"
     avaluateRecomendations conn users user []
 
 
@@ -181,9 +179,7 @@ getMoviesAvaluatedWellByUser conn user = do
 
 getUsersWhoAvaluateWell :: Connection -> IO [User]
 getUsersWhoAvaluateWell conn = do
-    putStrLn "getUsersWhoAvaluate"
     usersEmails <- query_ conn "select count(ratingid), useremail from ratings r where rating > 3 group by useremail;" :: IO [(Integer, String)]
-    putStrLn "getUsersWhoAvaluate2"
     getUsersByEmail conn (map snd usersEmails) []
 
 

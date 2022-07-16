@@ -144,42 +144,46 @@ search :: Connection -> User -> IO()
 search conn user = do
     putStrLn "---------------------- PESQUISAR ------------------------"
     putStrLn ""
-    putStrLn "Digite o nome do filme ou série que deseja pesquisar (Se quiser voltar, aperte enter e digite 'v'):"
+    putStrLn "Digite o nome do filme ou série que deseja pesquisar (Se "
+    putStrLn "quiser voltar, aperte enter):"
     putStrLn ""
     title <- getLine
-    putStrLn ""
-    movies <- searchMovie conn (map toLower title)
-    series <- searchSerie conn (map toLower title)
-    if null movies && null series then do
-        putStrLn "Não foi encontrado nenhum filme ou série com esse título!" 
-    else do
-        putStrLn "Filmes:"
-        putStrLn ""
-        printMoviesList movies 1
-        putStrLn ""
-        putStrLn "Séries:"
-        putStrLn ""
-        printSeriesList series (fromIntegral (length movies) + 1)
-
-    putStrLn ""
-    putStrLn "Digite o número correspondente ao filme ou a série que quer ver ou as opções abaixo:"
-    putStrLn "( p - Pesquisar novamente; v - Voltar ao menu principal; c - Cadastrar um novo filme ou série): "
-    putStrLn ""
-
-    option <- getLine
-    if option == "v" then
+    if null (strip title) then do 
         clearScreenOnly
-    else if option == "p" then
-        clearScreenOnly >> search conn user
-    else if option == "c" then
-        clearScreenOnly >> registerMovieSerie conn user
-    else if not (isANumber option True) || (((read option :: Int) > (length movies + length series)) || (read option :: Int) < 1) || null option then do
-        putStrLn "Digite uma opção válida na próxima vez." >> clearScreenWithConfirmation
     else do
-        if (read option :: Int) <= length movies then do
-            clearScreenOnly >> showMovie conn user (movies !! ((read option :: Int) - 1)) >> search conn user
+        putStrLn ""
+        movies <- searchMovie conn (map toLower title)
+        series <- searchSerie conn (map toLower title)
+        if null movies && null series then do
+            putStrLn "Não foi encontrado nenhum filme ou série com esse título!" 
         else do
-            clearScreenOnly >> showSerie conn user (series !! ((read option :: Int) - length movies - 1)) >> search conn user
+            putStrLn "Filmes:"
+            putStrLn ""
+            printMoviesList movies 1
+            putStrLn ""
+            putStrLn "Séries:"
+            putStrLn ""
+            printSeriesList series (fromIntegral (length movies) + 1)
+
+        putStrLn ""
+        putStrLn "Digite o número correspondente ao filme ou a série que quer ver ou as opções abaixo:"
+        putStrLn "( p - Pesquisar novamente; v - Voltar ao menu principal; c - Cadastrar um novo filme ou série): "
+        putStrLn ""
+
+        option <- getLine
+        if option == "v" then
+            clearScreenOnly
+        else if option == "p" then
+            clearScreenOnly >> search conn user
+        else if option == "c" then
+            clearScreenOnly >> registerMovieSerie conn user
+        else if not (isANumber option True) || (((read option :: Int) > (length movies + length series)) || (read option :: Int) < 1) || null option then do
+            putStrLn "Digite uma opção válida na próxima vez." >> clearScreenWithConfirmation
+        else do
+            if (read option :: Int) <= length movies then do
+                clearScreenOnly >> showMovie conn user (movies !! ((read option :: Int) - 1)) >> search conn user
+            else do
+                clearScreenOnly >> showSerie conn user (series !! ((read option :: Int) - length movies - 1)) >> search conn user
 
 
 registerMovieSerie :: Connection -> User -> IO ()

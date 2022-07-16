@@ -172,7 +172,6 @@ getSeriesAvaluatedWellByUser conn user = do
 
 getUsersWhoAvaluateWellSeries :: Connection -> IO [User]
 getUsersWhoAvaluateWellSeries conn = do
-    putStrLn "getUsersWhoAvaluate"
     usersEmails <- query_ conn "select count(ratingid), useremail from seriesratings r where rating > 3 group by useremail;" :: IO [(Integer, String)]
     getUsersByEmail conn (map snd usersEmails) []
 
