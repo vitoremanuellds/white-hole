@@ -274,31 +274,39 @@ recomendations conn user = do
     series <- getRecomendationsOfSeries conn user
     putStrLn "Filmes:"
     putStrLn ""
+    tenMovies <- getTenBestMovies conn
+    let movieLength = if null movies then length tenMovies else length movies
     if null movies then do
-        tenMovies <- getTenBestMovies conn 
         printMoviesList tenMovies 1 
     else do
         printMoviesList movies 1
     putStrLn ""
     putStrLn "Séries:"
     putStrLn ""
+    tenSeries <- getTenBestSeries conn
+    let serieLength = if null series then length tenSeries else length series
     if null series then do 
-        tenSeries <- getTenBestSeries conn
-        printSeriesList tenSeries (fromIntegral (length movies + 1))
+        printSeriesList tenSeries (fromIntegral (movieLength + 1))
     else do 
-        printSeriesList series (fromIntegral (length movies + 1))
+        printSeriesList series (fromIntegral (movieLength + 1))
     putStrLn ""
     putStrLn "Qual filme ou série você quer acessar? (Digite o número do filme/série da lista; Se quiser voltar, aperte Enter)"
     choice <- getLine
     if null choice then do
         clearScreenOnly
     else do
-        if (read choice :: Int) > length movies + length series || (read choice :: Int) <= 0 then do
+        if (read choice :: Int) > movieLength + serieLength || (read choice :: Int) <= 0 then do
             putStrLn ""
             putStrLn "digite uma opção válida" >> clearScreenWithConfirmation
             recomendations conn user
         else do
             if (read choice :: Int) <= length movies then do
-                clearScreenOnly >> showMovie conn user (movies !! ((read choice :: Int) - 1)) >> recomendations conn user
+                if null movies then 
+                    clearScreenOnly >> showMovie conn user (tenMovies !! ((read choice :: Int) - 1)) >> recomendations conn user
+                else
+                    clearScreenOnly >> showMovie conn user (movies !! ((read choice :: Int) - 1)) >> recomendations conn user
             else do
-                clearScreenOnly >> showSerie conn user (series !! ((read choice :: Int) - length movies - 1)) >> recomendations conn user
+                if null series then
+                    clearScreenOnly >> showSerie conn user (tenSeries !! ((read choice :: Int) - movieLength - 1)) >> recomendations conn user
+                else
+                    clearScreenOnly >> showSerie conn user (series !! ((read choice :: Int) - movieLength - 1)) >> recomendations conn user
