@@ -208,15 +208,22 @@ myList conn user = do
     putStrLn ""
     movies <- getWatchLaterList conn user
     series <- getWatchLaterListSeries conn user
+    putStrLn "Filmes:"
+    putStrLn ""
     if null movies then do
         print "Lista vazia"
     else do
-        putStrLn "Filmes:"
-        putStrLn ""
         printMoviesList movies 1
-        putStrLn "Séries:"
-        putStrLn ""
+
+    putStrLn ""
+    putStrLn "Séries:"
+    putStrLn ""
+    
+    if null series then do
+        print "Lista vazia"
+    else do
         printSeriesList series (fromIntegral (length movies) + 1)
+
     putStrLn ""
     putStrLn "Opções:"
     putStrLn ""
