@@ -18,25 +18,70 @@ createSerie conn = do
     putStrLn ""
     putStrLn "Qual o título da série?"
     title <- getLine
-    if null title then
-        putStrLn "A série deve ter um título!" >> createSerie conn
+    if null $ strip title then do
+        putStrLn "A série deve ter um título!"
+        clearScreenWithConfirmation
+        return ()
     else
         putStrLn "Qual a data de lançamento da série? (yyyy-mm-dd)"
+
     releaseDate <- getLine
-    putStrLn "Qual a quantidade de episódios da série?"
+    if null (strip releaseDate) || length releaseDate /= 10 then do
+        putStrLn "A data deve ser uma data válida!"
+        clearScreenWithConfirmation
+        return () 
+    else do 
+        putStrLn "Qual a quantidade de episódios da série?"
+
     episodes <- getLine
-    putStrLn "Qual a sinopse da série?"
+    if null (strip episodes) || not (isANumber episodes True) || length episodes > 4 then do
+        putStrLn "Digite uma quantidade de episódios válida"
+        clearScreenWithConfirmation
+        return ()
+    else do 
+        putStrLn "Qual a sinopse da série?"
+
     summaryT <- getLine
     putStrLn "Digite o nome dos diretores (separados por vírgula):"
     directors <- getLine
     putStrLn "Digite o nome dos atores (separados por vírgula):"
     actors <- getLine
-    let summary = if summaryT == "" then "No comments!" else summaryT
-    serie <- registerSerie conn title releaseDate episodes summary
-    addCastingToSerie conn serie (splitItems actors [])
-    addDirectorsToSerie conn serie (splitItems directors [])
+    let summary = if null summaryT then "Sem sinopse!" else summaryT
     putStrLn ""
-    putStrLn "Série cadastrado com sucesso!"
+    putStrLn "Digite a quais categorias essa série pertence (digite os números associados separados por espaços):"
+    putStrLn ""
+    putStrLn "1 - Ação          8  - Fantasia"
+    putStrLn "2 - Suspense      9  - Documentário"
+    putStrLn "3 - Romance       10 - Drama"
+    putStrLn "4 - Comédia       11 - Anime"
+    putStrLn "5 - Terror        12 - Mistério"
+    putStrLn "6 - Aventura      13 - Infantil"
+    putStrLn "7 - Investigação  14 - Ficção científica"
+    putStrLn ""
+
+    categoriesTemp <- getLine
+    if null (strip categoriesTemp) || not (isANumber categoriesTemp True) then do
+        putStrLn "É necessário que a série tenha ao menos uma categoria!"
+        clearScreenWithConfirmation
+        return ()
+    else do 
+        putStrLn "Quer realmente adicionar essa série? (s/N)"
+
+    confirmation <- getLine
+    if null confirmation || map toLower confirmation == "n" then do
+        putStrLn ""
+        putStrLn "Ok!"
+        clearScreenWithConfirmation
+    else do
+        movie <- registerSerie conn title releaseDate episodes summary
+        addCastingToSerie conn movie (splitItems actors [])
+        addDirectorsToSerie conn movie (splitItems directors [])
+        verified <- verifyCategories (words categoriesTemp)
+        let categories = if verified then convertCategories (words categoriesTemp) [] else []
+        addCategoriesToSerie conn movie categories
+        putStrLn ""
+        putStrLn "Série cadastrada com sucesso!"
+        clearScreenWithConfirmation
 
 
 
@@ -52,17 +97,21 @@ tenBestSeries conn user = do
     putStrLn ""
     putStrLn "As dez séries mais bem avaliadas no momento são: "
     putStrLn ""
-    series <- query_ conn "select * from series order by rating desc limit 10;" :: IO [S.Serie] 
+    series <- getTenBestSeries conn
     printSeriesList series 1
     putStrLn ""
     putStrLn "Digite o número da séries para acessá-la (aperte enter para voltar):"
     option <- getLine
-    if null option then 
-        putStrLn "" 
-    else if not (isANumber option True) || (((read option :: Int) > length series) || (read option :: Int) < 1) then do
-        putStrLn "Digite uma opção válida na próxima vez."
-    else do
-        showSerie conn user (series !! ((read option :: Int) - 1)) >> tenBestSeries conn user
+    if null option then do
+        clearScreenOnly
+    else do 
+        if not (isANumber option True) || (((read option :: Int) > length series) || (read option :: Int) < 1) then do
+            putStrLn ""
+            putStrLn "Digite uma opção válida na próxima vez."
+            clearScreenWithConfirmation
+        else do
+            clearScreenOnly
+            showSerie conn user (series !! ((read option :: Int) - 1)) >> tenBestSeries conn user
 
 
 tenBestSeriesByCategory :: Connection -> User -> IO ()
@@ -81,29 +130,32 @@ tenBestSeriesByCategory conn user = do
     putStrLn "Digite o número da categoria:"
     putStrLn ""
     option <- getLine
-    if not (isANumber option True) || (((read option :: Int) > 14) || (read option :: Int) < 1) then do
+    if null (strip option) || not (isANumber option True) || (((read option :: Int) > 14) || (read option :: Int) < 1) then do
+        putStrLn ""
         putStrLn "Digite uma opção válida na próxima vez."
+        clearScreenWithConfirmation
     else do 
-        putStrLn "As dez séries mais bem avaliadas no momento são: "
-    series <- getSeriesByCategory conn $ head (convertCategories (words option) [])
-    putStrLn ""
-    printSeriesList series 1
-    putStrLn ""
-    putStrLn "Digite o número da série para acessá-la (aperte enter para voltar):"
-    option <- getLine
-    if null option then 
-        putStrLn "" 
-    else if not (isANumber option True) || (((read option :: Int) > length series) || (read option :: Int) < 1) || null option then do
-        putStrLn "Digite uma opção válida na próxima vez."
-    else do
-        showSerie conn user (series !! ((read option :: Int) - 1)) >> tenBestSeriesByCategory conn user
+        clearScreenOnly
+        putStrLn "As dez séries mais bem avaliadas dessa categoria no momento são (Se a categoria não contiver filmes o suficiente, pode não aparecer dez séries): "
+        series <- getSeriesByCategory conn $ head (convertCategories (words option) [])
+        putStrLn ""
+        printSeriesList series 1
+        putStrLn ""
+        putStrLn "Digite o número da série para acessá-la (aperte enter para voltar):"
+        option <- getLine
+        if null option then 
+            clearScreenOnly
+        else if not (isANumber option True) || (((read option :: Int) > length series) || (read option :: Int) < 1) || null option then do
+            putStrLn "" >> putStrLn "Digite uma opção válida na próxima vez." >> clearScreenWithConfirmation
+        else do
+            clearScreenOnly >> showSerie conn user (series !! ((read option :: Int) - 1)) >> tenBestSeriesByCategory conn user
 
 
 showSerie :: Connection -> User -> S.Serie -> IO ()
 showSerie conn user serie = do
     putStrLn ""
     putStrLn "-------------------------------------------------"
-    putStrLn (S.title serie)
+    putStrLn ("     " ++ capitalize (S.title serie))
     putStrLn "-------------------------------------------------"
     putStrLn ""
     putStrLn ("Sinopse: " ++ S.summary serie)
@@ -111,7 +163,7 @@ showSerie conn user serie = do
     putStrLn ("Quantidade de episódios: " ++ S.episodes serie)
     putStrLn ("Data de lançamento: " ++ S.releaseDate serie)
     categories <- getCategoriesOfSeriesInOneString conn serie
-    putStrLn ("Categorias: " ++ categories)
+    putStrLn ("Categorias: " ++ capitalize categories)
     putStrLn ""
     putStrLn ("Nota geral: " ++ show (S.rating serie))
     putStrLn ""
@@ -125,19 +177,27 @@ showSerie conn user serie = do
     hFlush stdout
     option <- getLine
     case option of
-        "1" -> printCasting conn serie >> showSerie conn user serie
-        "2" -> addToWatchLaterListSeries conn user serie >> putStrLn "Filme adicionado com sucesso na lista!" >> showSerie conn user serie
-        "3" -> newRating conn user serie >> updateSerieRating conn serie >> showSerie conn user serie
-        "4" -> printRatings conn serie >> showSerie conn user serie
-        "5" -> hFlush stdout
-        x -> putStrLn "Digite uma opção válida" >> showSerie conn user serie
+        "1" -> clearScreenOnly >> printCasting conn serie >> showSerie conn user serie
+        "2" -> clearScreenOnly >> addToWatchLaterListSeries conn user serie >> putStrLn "Filme adicionado com sucesso na lista!" >> clearScreenWithConfirmation >> showSerie conn user serie
+        "3" -> clearScreenOnly >> newRating conn user serie >> updateSerieRating conn serie >> showSerie conn user serie
+        "4" -> clearScreenOnly >> printRatings conn serie >> showSerie conn user serie
+        "5" -> clearScreenOnly 
+        x -> putStrLn "Digite uma opção válida" >> clearScreenWithConfirmation >> showSerie conn user serie
 
 
 
 printCasting :: Connection -> S.Serie -> IO ()
 printCasting conn serie = do
     casting <- getCastingSerie conn serie
-    if null casting then putStrLn "" >> putStrLn "Não há um Casting cadastrado para essa série!" else putStrLn "" >> printCasting' casting
+    if null casting then do 
+        putStrLn "" >> putStrLn "Não há um Casting cadastrado para essa série!" >> clearScreenWithConfirmation
+    else do
+        clearScreenOnly
+        putStrLn "------------------------------------------------"
+        putStrLn "                    Casting"
+        putStrLn "------------------------------------------------"
+        putStrLn ""
+        printCasting' casting >> clearScreenWithConfirmation
 
 
 printCasting' :: [(String, String)] -> IO ()
@@ -155,18 +215,36 @@ newRating conn user serie = do
     if not (isANumber nota True && (read nota :: Int) `elem` [1..5]) then putStrLn "Digite um valor válido na próxima vez!" >> newRating conn user serie else putStrLn ""
     putStrLn "Faça um comentário sobre a série (Se não quiser, basta apertar enter): "
     commentary <- getLine
+    let comment = if null commentary then "Sem comentário" else commentary
     putStrLn ""
     putStrLn "Confirmar avaliação (s/N)"
     confirmation <- getLine
-    if null confirmation || map toLower confirmation == "n" then do putStrLn "Ok!" else do putStrLn ""
-    avaluateSerie conn user serie (read nota :: Integer) commentary
-    putStrLn "Avaliação feita com sucesso!"
+    if null confirmation || map toLower confirmation == "n" then do 
+        putStrLn "Ok!" 
+        clearScreenWithConfirmation
+    else do 
+        confirmation <- avaluateSerie conn user serie (read nota :: Integer) comment
+        if confirmation then do
+            clearScreenOnly
+            putStrLn "Avaliação feita com sucesso!"
+        else do
+            clearScreenOnly
+            putStrLn "Um mesmo usuário não pode avaliar a mesma série duas vezes!"
+        clearScreenWithConfirmation
 
 
 printRatings :: Connection -> S.Serie -> IO ()
 printRatings conn serie = do
     ratings <- getRatingsSeries conn serie
-    if null ratings then putStrLn "" >> putStrLn "Essa série ainda não foi avaliada por algum usuário!" else putStrLn "" >> printRatings' ratings
+    if null ratings then do 
+        putStrLn "" >> putStrLn "Essa série ainda não foi avaliada por algum usuário!" >> clearScreenWithConfirmation
+    else do 
+        putStrLn ""
+        putStrLn "------------------------------------------------"
+        putStrLn "                  Avaliações"
+        putStrLn "------------------------------------------------"
+        putStrLn ""
+        printRatings' ratings >> clearScreenWithConfirmation
 
 
 printRatings' :: [R.Rating] -> IO ()

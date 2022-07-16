@@ -38,21 +38,8 @@ authenticate conn userEmail userPassword = do
         return False
 
 
-addToWatchLaterList :: Connection -> User -> M.Movie -> IO Bool
-addToWatchLaterList conn user movie = do
-    userExists <- userAlreadyExists conn $ email user
-    if userExists then do
-        execute conn "INSERT INTO watchlaterlist values (?,?)" (email user, M.movieId movie)
-        return True
-    else do
-        return False
-
-
-addToWatchLaterListSeries :: Connection -> User -> S.Serie -> IO Bool
-addToWatchLaterListSeries conn user serie = do
-    userExists <- userAlreadyExists conn $ email user
-    if userExists then do
-        execute conn "INSERT INTO watchlaterlistseries values (?,?)" (email user, S.serieId serie)
-        return True
-    else do
-        return False
+getUsersByEmail :: Connection -> [String] -> [User] -> IO [User]
+getUsersByEmail conn [] result = return result
+getUsersByEmail conn (x:xs) result = do
+    users <- getUserByEmail conn x
+    getUsersByEmail conn xs (users ++ result)

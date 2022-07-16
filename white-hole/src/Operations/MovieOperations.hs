@@ -6,7 +6,7 @@ import Database.PostgreSQL.Simple
 import Entities.User
 import qualified Entities.Movie as M
 import qualified Entities.Rating as R
-import Operations.UserOperations (userAlreadyExists)
+import Operations.UserOperations (userAlreadyExists, getUserByEmail, getUsersByEmail)
 import Data.List
 import Data.Char (toLower, isDigit)
 import Text.Read (Lexeme(String))
@@ -17,7 +17,9 @@ import GHC.RTS.Flags (TraceFlags(user))
 avaluateMovie :: Connection -> User -> M.Movie -> Integer -> String -> IO Bool
 avaluateMovie conn user movie rating commentary = do
     userExists <- userAlreadyExists conn $ email user
-    if userExists && (rating `elem` [1..5]) then do
+    myRatings <- getAvaluations conn user
+    let moviesId = map R.theId myRatings
+    if userExists && (rating `elem` [1..5]) && notElem (M.movieId movie) moviesId then do
         execute conn "INSERT INTO ratings (useremail, movieid, rating, commentary) values (?, ?, ?, ?)" (email user, M.movieId movie, rating, commentary)
         return True
     else do
@@ -112,7 +114,7 @@ getMoviesWithRatings conn = do
 
 getMoviesByCategory :: Connection -> String -> IO [M.Movie]
 getMoviesByCategory conn category = do
-    query conn "select movieid, title, releasedate, duration, summary, rating from ((select movieid as mid, category  from categories c where category = ?) as c join movies m on c.mid = m.movieid) order by rating desc limit 10;" [category] :: IO [M.Movie]
+    query conn "select movieid, title, releasedate, duration, summary, rating from ((select movieid as mid, category  from categories c where category = ?) as c join (select m.movieid, m.title, m.releasedate, m.duration, m.summary, m.rating from (movies m join (select coalesce(c1 - c2, c1) as c, mid1 as mid from (((select count(movieid) as c1, movieid as mid1 from ratings where rating > 3 group by mid1 order by c1 desc) as one left outer join (select count(movieid) as c2, movieid as mid2 from ratings where rating < 4 group by mid2 order by c2 desc) as two on one.mid1 = two.mid2)) order by c desc) r on m.movieid = r.mid) order by c desc) m on c.mid = m.movieid) order by rating desc limit 10;" [category] :: IO [M.Movie]
 
 
 
@@ -145,22 +147,25 @@ addCategoriesToMovie conn movie categories = do
 
 getRecomendationsOfMovies :: Connection -> User -> IO [M.Movie]
 getRecomendationsOfMovies conn user = do
-    users <- getUsersWhoAvaluate conn
-    avaluateRecomendations conn users user
+    putStrLn "getRecomendationsOfMovies"
+    users <- getUsersWhoAvaluateWell conn
+    putStrLn "avaluateRecomendations"
+    avaluateRecomendations conn users user []
 
 
-avaluateRecomendations :: Connection -> [User] -> User -> IO [M.Movie]
-avaluateRecomendations conn [] user = return []
-avaluateRecomendations conn (x:xs) user = do
-    movies <- getMoviesAvaluatedByUser conn x
-    myMovies <- getMoviesAvaluatedByUser conn user
-    let alike = movies `intersect` myMovies
-    if length alike > (length myMovies `div` 2) + 1 then do
-        nexts <- avaluateRecomendations conn xs user
-        return ((movies \\ myMovies) ++ nexts)
+avaluateRecomendations :: Connection -> [User] -> User -> [M.Movie] -> IO [M.Movie]
+avaluateRecomendations conn [] user result = return result
+avaluateRecomendations conn (x:xs) user result = do
+    if length result >= 10 then 
+        return result 
     else do
-        avaluateRecomendations conn xs user
-
+        movies <- getMoviesAvaluatedWellByUser conn x
+        myMovies <- getMoviesAvaluatedWellByUser conn user
+        let alike = movies `intersect` myMovies
+        if length alike > (length myMovies `div` 2) + 1 then do
+            avaluateRecomendations conn xs user ((movies \\ myMovies) ++ result)
+        else do
+            avaluateRecomendations conn xs user result
 
 
 getAvaluations :: Connection -> User -> IO [R.Rating]
@@ -168,12 +173,35 @@ getAvaluations conn user = do
     query conn "select * from ratings r where useremail = ?;" [email user] :: IO [R.Rating]
 
 
-getMoviesAvaluatedByUser :: Connection -> User -> IO [M.Movie]
-getMoviesAvaluatedByUser conn user = do
-    moviesId <- query conn "select movieid, ratingid from ratings r where useremail = ?;" [email user] :: IO [(Integer, Integer)]
+getMoviesAvaluatedWellByUser :: Connection -> User -> IO [M.Movie]
+getMoviesAvaluatedWellByUser conn user = do
+    moviesId <- query conn "select movieid, rating from ratings r where useremail = ? and rating > 3 order by rating desc limit 10;" [email user] :: IO [(Integer, Integer)]
     getMoviesById conn (map fst moviesId) []
 
 
-getUsersWhoAvaluate :: Connection -> IO [User]
-getUsersWhoAvaluate conn = do
-    query_ conn "select useremail  from ratings r group by useremail;" :: IO [User]
+getUsersWhoAvaluateWell :: Connection -> IO [User]
+getUsersWhoAvaluateWell conn = do
+    putStrLn "getUsersWhoAvaluate"
+    usersEmails <- query_ conn "select count(ratingid), useremail from ratings r where rating > 3 group by useremail;" :: IO [(Integer, String)]
+    putStrLn "getUsersWhoAvaluate2"
+    getUsersByEmail conn (map snd usersEmails) []
+
+
+getTenBestMovies :: Connection -> IO [M.Movie]
+getTenBestMovies conn = do
+    query_ conn "select m.movieid, m.title, m.releasedate, m.duration, m.summary, m.rating from (movies m left outer join (select coalesce(c1 - c2, c1) as c, mid1 as mid from (((select count(movieid) as c1, movieid as mid1 from ratings where rating > 3 group by mid1 order by c1 desc) as one left outer join (select count(movieid) as c2, movieid as mid2 from ratings where rating < 4 group by mid2 order by c2 desc) as two on one.mid1 = two.mid2)) order by c desc) r on m.movieid = r.mid) order by c desc nulls last limit 10;" :: IO [M.Movie] 
+
+
+addToWatchLaterList :: Connection -> User -> M.Movie -> IO Bool
+addToWatchLaterList conn user movie = do
+    userExists <- userAlreadyExists conn $ email user
+    if userExists then do
+        movies <- getWatchLaterList conn user
+        let moviesId = map M.movieId movies
+        if M.movieId movie `elem` moviesId then do
+            return False
+        else do
+            execute conn "INSERT INTO watchlaterlist values (?,?)" (email user, M.movieId movie)
+            return True
+    else do
+        return False

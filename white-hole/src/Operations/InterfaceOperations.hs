@@ -23,13 +23,39 @@ signUp conn = do
     putStrLn ""
     putStrLn "Digite o seu nome:"
     userName <- getLine
+    if null (strip userName) then do 
+        putStrLn "Digite um nome válido" 
+        clearScreenWithConfirmation
+        return () 
+    else do 
+        putStrLn ""
+
     putStrLn "Digite o seu sobrenome:"
     userSurname <- getLine
+    if null (strip userSurname) then do 
+        putStrLn "Digite um sobrenome válido" 
+        clearScreenWithConfirmation
+        return ()
+    else do 
+        putStrLn ""
+
     putStrLn "Digite o seu e-mail:"
     userEmail <- getLine
-    putStrLn "Digite a sua senha:"
+    if null (strip userEmail) then do 
+        putStrLn "Digite um e-mail válido" 
+        clearScreenWithConfirmation
+        return ()
+    else do 
+        putStrLn ""
+
+    putStrLn "Digite a sua senha (tem que ter no mínimo 8 caracteres):"
     userPassword <- getLine
-    {- Chamada da função que cadastra o usuário no banco de dados! -}
+    if length (strip userPassword) < 9 then do 
+        putStrLn "A senha não entende aos requisitos básicos!"
+        clearScreenWithConfirmation
+        return ()
+    else do
+        putStrLn ""
     ok <- createUser conn $ User {email=userEmail, password=userPassword, nome=userName, sobrenome=userSurname}
     putStrLn (if ok then "Usuario cadastrado com sucesso!" else "Ja existe usuario cadastrado com esse e-mail!")
     clearScreenWithConfirmation
@@ -47,7 +73,7 @@ signIn conn = do
     authenticated <- authenticate conn userEmail userPassword
     if authenticated then do
         putStrLn ""
-        putStrLn "Bem vindo!"
+        putStrLn "Credenciais válidas!"
         user <- getUserByEmail conn userEmail
         clearScreenWithConfirmation 
         run conn $ head user
@@ -197,21 +223,26 @@ myList conn user = do
     option <- getLine
     if option == "1" then do
         putStrLn ""
-        putStrLn "Qual filme ou série você quer acessar? (Digite o número do filme/série da lista)"
+        putStrLn "Qual filme ou série você quer acessar? (Digite o número do filme/série da lista; Para voltar, aperte Enter)"
         choice <- getLine
-        if (read choice :: Int) > length movies + length series || (read choice :: Int) <= 0 then do
-            putStrLn "digite uma opção válida" >> clearScreenWithConfirmation
-            myList conn user
-        else do
-            if (read choice :: Int) <= length movies then do
-                clearScreenOnly >> showMovie conn user (movies !! ((read choice :: Int) - 1)) >> myList conn user
+        if null choice then do 
+            clearScreenOnly 
+        else do 
+            if (read choice :: Int) > length movies + length series || (read choice :: Int) <= 0 then do
+                putStrLn ""
+                putStrLn "digite uma opção válida" >> clearScreenWithConfirmation
+                myList conn user
             else do
-                clearScreenOnly >> showSerie conn user (series !! ((read choice :: Int) - length movies - 1)) >> myList conn user
+                if (read choice :: Int) <= length movies then do
+                    clearScreenOnly >> showMovie conn user (movies !! ((read choice :: Int) - 1)) >> myList conn user
+                else do
+                    clearScreenOnly >> showSerie conn user (series !! ((read choice :: Int) - length movies - 1)) >> myList conn user
 
     else do
         if option == "2" then do
             clearScreenOnly
         else do
+            putStrLn ""
             putStrLn "Digite uma opção válida" >> clearScreenWithConfirmation
             myList conn user
 
@@ -226,13 +257,37 @@ recomendations conn user = do
     putStrLn "Aqui estão algumas recomendações de filmes e séries que "
     putStrLn "achamos que você vai gostar!"
     putStrLn ""
-    putStrLn "Filmes:"
+    putStrLn "Analizando o seu perfil... (aguarde)"
     putStrLn ""
     movies <- getRecomendationsOfMovies conn user
     series <- getRecomendationsOfSeries conn user
-    if null movies then tenBestMovies conn user else printMoviesList movies 1
+    putStrLn "Filmes:"
+    putStrLn ""
+    if null movies then do
+        tenMovies <- getTenBestMovies conn 
+        printMoviesList tenMovies 1 
+    else do
+        printMoviesList movies 1
     putStrLn ""
     putStrLn "Séries:"
     putStrLn ""
-    if null series then tenBestSeries conn user else printSeriesList series (fromIntegral (length movies + 1))
+    if null series then do 
+        tenSeries <- getTenBestSeries conn
+        printSeriesList tenSeries (fromIntegral (length movies + 1))
+    else do 
+        printSeriesList series (fromIntegral (length movies + 1))
     putStrLn ""
+    putStrLn "Qual filme ou série você quer acessar? (Digite o número do filme/série da lista; Se quiser voltar, aperte Enter)"
+    choice <- getLine
+    if null choice then do
+        clearScreenOnly
+    else do
+        if (read choice :: Int) > length movies + length series || (read choice :: Int) <= 0 then do
+            putStrLn ""
+            putStrLn "digite uma opção válida" >> clearScreenWithConfirmation
+            recomendations conn user
+        else do
+            if (read choice :: Int) <= length movies then do
+                clearScreenOnly >> showMovie conn user (movies !! ((read choice :: Int) - 1)) >> recomendations conn user
+            else do
+                clearScreenOnly >> showSerie conn user (series !! ((read choice :: Int) - length movies - 1)) >> recomendations conn user

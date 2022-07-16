@@ -44,7 +44,7 @@ concatenateWithComma (x:xs) = " " ++ x ++ "," ++ concatenateWithComma xs
 clearScreenWithConfirmation :: IO ()
 clearScreenWithConfirmation = do
     putStrLn ""
-    putStrLn "(Aperte Enter para continuar)"
+    putStrLn "(Aperte Enter)"
     placebo <- getLine
     System.system "clear"
     putStrLn ""
@@ -54,3 +54,10 @@ clearScreenOnly :: IO ()
 clearScreenOnly = do
     System.system "clear"
     return ()
+
+
+strip :: String -> String
+strip name = do
+    let nameTemp = dropWhile (==' ') name
+    let result = dropWhile (==' ') (reverse nameTemp)
+    result

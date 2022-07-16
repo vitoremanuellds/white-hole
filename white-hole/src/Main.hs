@@ -18,20 +18,20 @@ main = do
     putStrLn ""
     putStrLn "Conectando com a base de dados... (Aguarde)"
     conn <- connectToDB
-    putStrLn ""
+    clearScreenOnly
     putStrLn "Recuperando informações sobre filmes... (Aguarde)"
     movies <- getMoviesWithRatings conn
-    putStrLn ""
+    clearScreenOnly
     putStrLn "Recuperando informações sobre séries... (Aguarde)"
     series <- getSeriesWithRatings conn
-    putStrLn ""
+    clearScreenOnly
     putStrLn "Atualizando informações sobre filmes... (Aguarde)"
     updateAllMovieRating conn movies
-    putStrLn ""
+    clearScreenOnly
     putStrLn "Atualizando informações sobre séries... (Aguarde)"
     updateAllSerieRating conn series
-    putStrLn ""
-    putStrLn "Tudo pronto! (Aperte Enter para continuar)"
+    clearScreenOnly
+    putStrLn "Tudo pronto!"
     clearScreenWithConfirmation
     firstMenu conn
     exitSuccess

@@ -6,7 +6,7 @@ import Database.PostgreSQL.Simple
 import Entities.User
 import qualified Entities.Serie as S
 import qualified Entities.Rating as R
-import Operations.UserOperations (userAlreadyExists, addToWatchLaterList)
+import Operations.UserOperations (userAlreadyExists, getUsersByEmail)
 import Data.List
 import Data.Char (toLower)
 import Operations.UtilOperations
@@ -14,7 +14,9 @@ import Operations.UtilOperations
 avaluateSerie :: Connection -> User -> S.Serie -> Integer -> String -> IO Bool
 avaluateSerie conn user serie rating commentary = do
     userExists <- userAlreadyExists conn $ email user
-    if userExists && (rating `elem` [1..5]) then do
+    myRatings <- getAvaluationsSeries conn user
+    let seriesId = map R.theId myRatings
+    if userExists && (rating `elem` [1..5]) && notElem (S.serieId serie) seriesId then do
         execute conn "INSERT INTO seriesratings (useremail, serieid, rating, commentary) values (?, ?, ?, ?)" (email user, S.serieId serie, rating, commentary)
         return True
     else do
@@ -109,16 +111,16 @@ getSeriesWithRatings conn = do
 
 getSeriesByCategory :: Connection -> String -> IO [S.Serie]
 getSeriesByCategory conn category = do
-    query conn "select serieid, title, releasedate, episodes, summary, rating from ((select seriesid as sid, category  from seriescategories c where category = ?) as c join series s on c.sid = s.seriesid) order by rating desc limit 10;" [category] :: IO [S.Serie]
-    
-    
+    query conn "select seriesid, title, releasedate, episodes, summary, rating from ((select seriesid as sid, category from seriescategories c where category = ?) as c join (select s.seriesid, s.title, s.releasedate, s.episodes, s.summary, s.rating from (series s left outer join (select coalesce(c1 - c2, c1) as c, sid1 as sid from (((select count(serieid) as c1, serieid as sid1 from seriesratings where rating > 3 group by sid1 order by c1 desc) as one left outer join (select count(serieid) as c2, serieid as sid2 from seriesratings where rating < 4 group by sid2 order by c2 desc) as two on one.sid1 = two.sid2)) order by c desc) r on s.seriesid = r.sid) order by c desc nulls last) s on c.sid = s.seriesid) order by rating desc limit 10;" [category] :: IO [S.Serie]
+
+
 
 getSeriesById :: Connection -> [Integer] -> [S.Serie] -> IO [S.Serie]
 getSeriesById conn [] result = return result
 getSeriesById conn (x:xs) result = do
     serie <- query conn "SELECT * FROM series WHERE seriesid = ?" [x] :: IO [S.Serie]
     getSeriesById conn xs (head serie:result)
-    
+
 
 
 getCategoriesOfSeriesInOneString :: Connection -> S.Serie -> IO String
@@ -137,21 +139,23 @@ addCategoriesToSerie conn serie categories = do
 
 getRecomendationsOfSeries :: Connection -> User -> IO [S.Serie]
 getRecomendationsOfSeries conn user = do
-    users <- getUsersWhoAvaluateSeries conn
-    avaluateRecomendationsSeries conn users user
+    users <- getUsersWhoAvaluateWellSeries conn
+    avaluateRecomendationsSeries conn users user []
 
 
-avaluateRecomendationsSeries :: Connection -> [User] -> User -> IO [S.Serie]
-avaluateRecomendationsSeries conn [] user = return []
-avaluateRecomendationsSeries conn (x:xs) user = do
-    series <- getSeriesAvaluatedByUser conn x
-    mySeries <- getSeriesAvaluatedByUser conn user
-    let alike = series `intersect` mySeries
-    if length alike > (length mySeries `div` 2) + 1 then do
-        nexts <- avaluateRecomendationsSeries conn xs user
-        return ((series \\ mySeries) ++ nexts)
+avaluateRecomendationsSeries :: Connection -> [User] -> User -> [S.Serie] -> IO [S.Serie]
+avaluateRecomendationsSeries conn [] user result = return result
+avaluateRecomendationsSeries conn (x:xs) user result = do
+    if length result >= 10 then
+        return result
     else do
-        avaluateRecomendationsSeries conn xs user
+        series <- getSeriesAvaluatedWellByUser conn x
+        mySeries <- getSeriesAvaluatedWellByUser conn user
+        let alike = series `intersect` mySeries
+        if length alike > (length mySeries `div` 2) + 1 then do
+            avaluateRecomendationsSeries conn xs user ((series \\ mySeries) ++ result)
+        else do
+            avaluateRecomendationsSeries conn xs user result
 
 
 
@@ -160,17 +164,40 @@ getAvaluationsSeries conn user = do
     query conn "select * from seriesratings r where useremail = ?;" [email user] :: IO [R.Rating]
 
 
-getSeriesAvaluatedByUser :: Connection -> User -> IO [S.Serie]
-getSeriesAvaluatedByUser conn user = do
-    seriesId <- query conn "select serieid, ratingid from seriesratings r where useremail = ?;" [email user] :: IO [(Integer, Integer)]
+getSeriesAvaluatedWellByUser :: Connection -> User -> IO [S.Serie]
+getSeriesAvaluatedWellByUser conn user = do
+    seriesId <- query conn "select serieid, rating from seriesratings r where useremail = ? and rating > 3 order by rating desc limit 10;;" [email user] :: IO [(Integer, Integer)]
     getSeriesById conn (map fst seriesId) []
 
 
-getUsersWhoAvaluateSeries :: Connection -> IO [User]
-getUsersWhoAvaluateSeries conn = do
-    query_ conn "select useremail from seriesratings r group by useremail;" :: IO [User]
+getUsersWhoAvaluateWellSeries :: Connection -> IO [User]
+getUsersWhoAvaluateWellSeries conn = do
+    putStrLn "getUsersWhoAvaluate"
+    usersEmails <- query_ conn "select count(ratingid), useremail from seriesratings r where rating > 3 group by useremail;" :: IO [(Integer, String)]
+    getUsersByEmail conn (map snd usersEmails) []
 
 
 getWatchLaterListSeries :: Connection -> User -> IO [S.Serie]
 getWatchLaterListSeries conn user = do
-    query conn "SELECT m.seriesid, m.title, m.releasedate, m.episodes, m.summary, m.rating FROM (watchlaterlistseries w JOIN series s ON w.serieid=s.seriesid) WHERE w.useremail = ?;" [email user] :: IO [S.Serie]
+    query conn "SELECT s.seriesid, s.title, s.releasedate, s.episodes, s.summary, s.rating FROM (watchlaterlistseries w JOIN series s ON w.serieid=s.seriesid) WHERE w.useremail = ?;" [email user] :: IO [S.Serie]
+
+
+getTenBestSeries :: Connection -> IO [S.Serie]
+getTenBestSeries conn = do
+    query_ conn "select s.seriesid, s.title, s.releasedate, s.episodes, s.summary, s.rating from (series s left outer join (select coalesce(c1 - c2, c1) as c, sid1 as sid from (((select count(serieid) as c1, serieid as sid1 from seriesratings where rating > 3 group by sid1 order by c1 desc) as one left outer join (select count(serieid) as c2, serieid as sid2 from seriesratings where rating < 4 group by sid2 order by c2 desc) as two on one.sid1 = two.sid2)) order by c desc) r on s.seriesid = r.sid) order by c desc nulls last limit 10;" :: IO [S.Serie]
+
+
+
+addToWatchLaterListSeries :: Connection -> User -> S.Serie -> IO Bool
+addToWatchLaterListSeries conn user serie = do
+    userExists <- userAlreadyExists conn $ email user
+    if userExists then do
+        series <- getWatchLaterListSeries conn user
+        let seriesId = map S.serieId series
+        if S.serieId serie `elem` seriesId then do
+            return False
+        else do
+            execute conn "INSERT INTO watchlaterlistseries values (?,?)" (email user, S.serieId serie)
+            return True
+    else do
+        return False
