@@ -14,7 +14,7 @@ Também vai ser necessário a instalação de alguns outros pacotes relacionados
 
 Para executar o projeto é preciso fazer o download do banco de dados <a href="https://www.enterprisedb.com/downloads/postgres-postgresql-downloads" target _blank>PostgreSQL</a> no sistema. Esse procedimento é necessário pois a biblioteca usada no projeto (postgresql-simple) necessita do pg_config instalado no computador para poder ser rodada.
 
-Depois de instalado, é necessário adicionar o caminho da pasta bin no PATH do Windows. Para tal, é necessário seguir os seguintes passos:
+Depois de instalado, é necessário adicionar o caminho da pasta bin (Geralmente C:/"Program Files"/PostgreSQL/<versão>/bin) no PATH do Windows. Para tal, é necessário seguir os seguintes passos:
 
 - Pesquisar por variáveis de ambiente no menu iniciar do Windows.
 Isso irá abrir uma janela onde você tem a opção de ver as variáveis de ambiente do sistema (usualmente fica localizado no canto inferior direito da janela).
