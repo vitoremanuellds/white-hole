@@ -30,7 +30,7 @@ No Fedora é preciso executar um comando, com permissão de administrador,  um p
 <code>dnf install libpq-dev</code>
 Logo após disso, o projeto está pronto para funcionar.
 
-##Como configurar a conexão do banco de dados
+## Como configurar a conexão do banco de dados
 
 White Hole usa o PostgreSQL e se conecta a ele por auxílio da biblioteca postgresql-simple e utiliza, por motivos de segurança, variáveis de ambientes para abrigar as credenciais do banco de dados. Para utilizar o banco é preciso ter em seu sistema as seguintes variáveis de ambiente:
 
