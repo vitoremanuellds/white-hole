@@ -12,3 +12,8 @@ db_query(Connection, Query, Rows) :-
         Rows
     ).
     
+
+db_parameterized_query(Connection, Query, Parameters, Rows):-
+    swritef(String, Query, Parameters),
+    db_query(Connection, String, Rows).
+    
