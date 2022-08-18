@@ -6,12 +6,6 @@
 
 Para rodar o White Hole no linux, é preciso instalar algumas dependências. Essas dependências estão descritas logo abaixo, junto também com o comando para instalá-las, tanto no Ubuntu, quanto no Fedora.
 
-- É preciso instalar uma pequena biblioteca para que a conexão com o PostgreSQL usado pela aplicação seja feita:
-
-  * <code>sudo apt install libpq-dev</code>
-
-  * <code>sudo dnf install libpq-devel</code>
-
 - Para se conectar ao PostgreSQL, o Prolog utiliza o ODBC, dessa forma é preciso instalar o driver ODBC para Linux:
 
   - <code>sudo apt install unixodbc</code>
@@ -76,8 +70,7 @@ SSLmode     = require
 
 ### Windows
 
-- É necessário instalar o PostgreSQL no seu computador. Faça o download através do site oficial e adicione a pasta <code>/bin</code> dentro da pasta de instalação do PostgreSQL no PATH do Windows. Para fazer isso, "environment variables" no menu iniciar. Primeira opção que aparecer abra-a e no canto inferior direito da janela vai ter o butão para clicar. Ao aparecer outra janela, procure por PATH e adicione o caminho da pasta <code>/bin</code>.
-- Baixe o driver do ODBC para Windows.
+- O driver ODBC para Windows já vem instalado por padrão.
 - Baixe o driver do PostgreSQL ODBC para Windows. Você pode baixá-lo clicando <a href="https://www.postgresql.org/ftp/odbc/versions/msi/" target="_blank">aqui</a>.
-- Configure o driver ODBC.
-- Teste a conex
+- Para configurar o driver ODBC, pesquise no menu iniciar por ODBC e abra a opção que apareceu. Logo em seguida, adicione um novo DNS de Usuário selecionando o driver do PostgreSQL e colocando as informações necessárias para se conectar com o PostgreSQL. O nome da Data Source deve ser <code>SWI-Prolog</code>.
+- Teste a conexão com o banco de dados e salve.
