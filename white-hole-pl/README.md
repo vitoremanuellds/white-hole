@@ -66,7 +66,7 @@ Password    =
 Port        = 
 SSLmode     = require
 ```
-- Teste a conexão utilizando o comando <code>iusql -v "{Nome dado ao banco, fica a sua escolha}"</code>.
+- Teste a conexão utilizando o comando <code>iusql -v "SWI-Prolog"</code>.
 
 - É necessário também baixar a interface do ODBC para o Prolog:
 
