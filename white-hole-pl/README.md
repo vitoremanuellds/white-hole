@@ -25,7 +25,25 @@ Para rodar o White Hole no linux, é preciso instalar algumas dependências. Ess
   - <code>sudo dnf install postgresql-odbc</code>
   
 - Verifique se o arquivo <code>/etc/odbcinst.ini</code> contém o seguite bloco de código. Se não constar, adicione-o em seu arquivo <code>/etc/odbcinst.ini</code>:
+Ubuntu:
+```
+[PostgreSQL ANSI]
+Description=PostgreSQL ODBC driver (ANSI version)
+Driver=psqlodbca.so
+Setup=libodbcpsqlS.so
+Debug=0
+CommLog=1
+UsageCount=1
 
+[PostgreSQL Unicode]
+Description=PostgreSQL ODBC driver (Unicode version)
+Driver=psqlodbcw.so
+Setup=libodbcpsqlS.so
+Debug=0
+CommLog=1
+UsageCount=1
+```
+Fedora
 ```  
 [PostgreSQL]
 Description	= ODBC for PostgreSQL
@@ -38,9 +56,9 @@ FileUsage	= 1
 - Verifique se o arquivo /etc/odbc.ini existe. Se ele existe, verifique se ele contém o seguinte bloco de código. Se não constar, crie e/ou adicione-o em seu arquivo <code>/etc/odbc.ini</code>:
   - Os valores que estão em branco devem ser substituídos pelas credenciais do banco PostgreSQL que está sendo usado. Para se conectar ao banco utilizado pela aplicação, entre em contato com um dos Mantainers do repositório.
 ```
-[{Nome dado ao banco, fica a sua escolha}]
+[SWI-Prolog]
 Description = SWI-Prolog
-Driver      = /usr/lib64/psqlodbcw.so
+Driver      = {driver name} // PostgreSQL para Fedora ou PostgreSQL Unicode para Ubuntu (não tem aspas).
 Servername  = 
 Database    = 
 UserName    = 
@@ -51,6 +69,8 @@ SSLmode     = require
 - Teste a conexão utilizando o comando <code>iusql -v "{Nome dado ao banco, fica a sua escolha}"</code>.
 
 - É necessário também baixar a interface do ODBC para o Prolog:
+
+  - <code>sudo dnf install swi-prolog swi-prolog-odbc</code>
 
   - <code>sudo dnf install pl-odbc</code>
 
