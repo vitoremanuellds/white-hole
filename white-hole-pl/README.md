@@ -58,6 +58,6 @@ SSLmode     = require
 
 - É necessário instalar o PostgreSQL no seu computador. Faça o download através do site oficial e adicione a pasta <code>/bin</code> dentro da pasta de instalação do PostgreSQL no PATH do Windows. Para fazer isso, "environment variables" no menu iniciar. Primeira opção que aparecer abra-a e no canto inferior direito da janela vai ter o butão para clicar. Ao aparecer outra janela, procure por PATH e adicione o caminho da pasta <code>/bin</code>.
 - Baixe o driver do ODBC para Windows.
-- Baixe o driver do PostgreSQL ODBC para Windows. Você pode baixá-lo clicando <a href="https://www.postgresql.org/ftp/odbc/versions/msi/" target=_blank>aqui</a>.
+- Baixe o driver do PostgreSQL ODBC para Windows. Você pode baixá-lo clicando <a href="https://www.postgresql.org/ftp/odbc/versions/msi/" target="_blank">aqui</a>.
 - Configure o driver ODBC.
 - Teste a conex
