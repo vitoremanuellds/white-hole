@@ -8,7 +8,7 @@ Para rodar o White Hole no linux, é preciso instalar algumas dependências. Ess
 
 - É preciso instalar uma pequena biblioteca para que a conexão com o PostgreSQL usado pela aplicação seja feita:
 
-  * <code>sudo dnf install libpq-dev</code>
+  * <code>sudo apt install libpq-dev</code>
 
   * <code>sudo dnf install libpq-devel</code>
 
