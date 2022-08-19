@@ -1,7 +1,34 @@
 :- module(movie_operations, [
         avaluateMovie/6,
         getMovieIdFromRatings/3,
-        getRatings/3
+        getRatings/3,
+        getCasting/3,
+        titleContainsWordMovie/3,
+        filterMovies/4, 
+        searchMovie/3,
+        registerMovie/6,
+        addCastingToMovie/4,
+        addDirectorsToMovie/4,
+        showMovieRating/3,
+        updateMovieRating/3,
+        updateAllMovieRating/2,
+        getMoviesWithRatings/2,
+        getMoviesByCategory/3,
+        getMoviesById/4,
+        getWatchLaterList/3,
+        getCategoriesOfMoviesInOneString/3,
+        getCategoriesFromRow/3,
+        addCategoriesToMovie/4,
+        getRecomendationsOfMovies/3,
+        avaluateRecomendations/5,
+        getAvaluations/3,
+        getMoviesAvaluatedWellByUser/3,
+        getMoviesIdFromRow/3,
+        getUsersWhoAvaluateWell/2,
+        getEmailsFromRow/3,
+        getTenBestMovies/2,
+        addToWatchLaterList/4,
+        getMoviesIdFromMovies/3
     ]).
 :- use_module('./util.pl').
 :- use_module('../Db/dbOperations.pl').
