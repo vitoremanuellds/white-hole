@@ -39,8 +39,7 @@ signin(Connection) :-
         run(Connection, User);
         writeln(''),
         writeln('E-mail ou senha inválidos!'),
-        clear_screen_with_confirmation
-        
+        clear_screen_with_confirmation  
     ).
 
 signup(Connection) :-
@@ -110,6 +109,4 @@ run(Connection, User) :-
 search(Connection, User) :-
     writeln('---------------------- PESQUISAR ------------------------').
     
-
-
 
