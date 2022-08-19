@@ -51,15 +51,11 @@ avaluateMovie(Connection, User, Movie, Rating, Commentary, Confirmacao):-
         Confirmacao is 0
     ).
 
-
+getMovieIdFromRatings([], ResultTemp, Result):- reverse(ResultTemp, Result).
 getMovieIdFromRatings([Rating|T], ResultTemp, Result):-
-    length(T, L),
-    (L > 0 ->
-        Rating = row(, , MovieId, , ), 
-        getMovieIdFromRatings(T, [ MovieId | ResultTemp ], Result);
-        Rating = row(, , MovieId, , ),
-        reverse([ MovieId | ResultTemp ], Result)
-    ).
+    Rating = row(, , MovieId, , ), 
+    getMovieIdFromRatings(T, [ MovieId | ResultTemp ], Result).
+        
 
 
 getRatings(Connection, Movie, Ratings):-
@@ -82,6 +78,7 @@ getCasting(Connection, Movie, Casting):-
     ).
 
 
+titleContainsWordMovie([], Movie, Confirmacao):- Confirmacao is 0.
 titleContainsWordMovie([Word|T], Movie, Confirmacao):-
     Movie = row(MovieId, _, _, _, _, _),
     length(T, L),
@@ -94,7 +91,7 @@ titleContainsWordMovie([Word|T], Movie, Confirmacao):-
         (member(Word, Words) -> Confirmacao is 1 ; Confirmacao is 0)
     ).
 
-
+filterMovies([], Names, ResultTemp, Result):- reverse(ResultTemp, Result).
 filterMovies([Movie | T], Names, ResultTemp, Result):-
     length(T, L),
     (L > 0 ->
@@ -144,40 +141,26 @@ registerMovie(Connection, Title, ReleaseDate, Summary, Duration, Movie):-
     ).
 
 
+addCastingToMovie(Connection, Movie, [], Confirmacao):- Confirmacao is 1.
 addCastingToMovie(Connection, Movie, [Actor | T], Confirmacao):-
     Movie = row(MovieId, _, _, _, _, _),
-    ( T = [] ->
-        dbop:db_parameterized_query_no_return(
-            Connection,
-            "INSERT INTO casting VALUES (%w,'%w', 'actor')",
-            [MovieId, Actor]
-        ), Confirmacao is 1
-        ;
-        dbop:db_parameterized_query_no_return(
-            Connection,
-            "INSERT INTO casting VALUES (%w,'%w', 'actor')",
-            [MovieId, Actor]
-        ),
-        addCastingToMovie(Connection, Movie, T, Confirmacao)
-    ).
+    dbop:db_parameterized_query_no_return(
+        Connection,
+        "INSERT INTO casting VALUES (%w,'%w', 'actor')",
+        [MovieId, Actor]
+    ),
+    addCastingToMovie(Connection, Movie, T, Confirmacao).
 
 
+addDirectorsToMovie(Connection, Movie, [], Confirmacao):- Confirmacao is 1.
 addDirectorsToMovie(Connection, Movie, [Director | T], Confirmacao):-
     Movie = row(MovieId, _, _, _, _, _),
-    ( T = [] ->
-        dbop:db_parameterized_query_no_return(
-            Connection,
-            "INSERT INTO casting VALUES (%w,'%w', 'director')",
-            [MovieId, Director]
-        ), Confirmacao is 1
-        ;
-        dbop:db_parameterized_query_no_return(
-            Connection,
-            "INSERT INTO casting VALUES (%w,'%w', 'director')",
-            [MovieId, Director]
-        ),
-        addDirectorsToMovie(Connection, Movie, T, Confirmacao)
-    ).
+    dbop:db_parameterized_query_no_return(
+        Connection,
+        "INSERT INTO casting VALUES (%w,'%w', 'director')",
+        [MovieId, Director]
+    ),
+    addDirectorsToMovie(Connection, Movie, T, Confirmacao).
 
 
 showMovieRating(Connection, Movie, Rating):-
@@ -200,7 +183,7 @@ updateMovieRating(Connection, Movie, Rating):-
         [Q, MovieId]
     ).
 
-
+updateAllMovieRating(Connection, []).
 updateAllMovieRating(Connection, [Movie | T]):-
     (T = [] ->
         updateMovieRating(Connection, Movie, Rating);
@@ -226,22 +209,15 @@ getMoviesByCategory(Connection, Category, Movies):-
         Movies
     ).
 
-
+getMoviesById(Connection, [], ResultTemp, Result):- reverse(ResultTemp, Result).
 getMoviesById(Connection, [MovieId | T], ResultTemp, Result):-
-    (T = [] ->
-        dbop:db_parameterized_query(
-            Connection,
-            "SELECT * FROM movies WHERE movieid = %w",
-            [MovieId],
-            [Movie]
-        ), reverse([Movie | ResultTemp], Result);
-        dbop:db_parameterized_query(
-            Connection,
-            "SELECT * FROM movies WHERE movieid = %w",
-            [MovieId],
-            [Movie]
-        ), getMoviesById(Connection, T, [Movie | ResultTemp], Result)
-    ).
+    
+    dbop:db_parameterized_query(
+        Connection,
+        "SELECT * FROM movies WHERE movieid = %w",
+        [MovieId],
+        [Movie]
+    ), getMoviesById(Connection, T, [Movie | ResultTemp], Result).
 
 
 getWatchLaterList(Connection, User, Movies):-
@@ -269,36 +245,25 @@ getCategoriesOfMoviesInOneString(Connection, Movie, String):-
     ).
 
 
-
+getCategoriesFromRow([], ResultTemp, Result):- reverse(ResultTemp, Result).
 getCategoriesFromRow([Category | T], ResultTemp, Result):-
-    (T = [] ->
-        Category = row(X),
-        reverse([X | ResultTemp], Result);
-        Category = row(X),
-        getCategoriesFromRow(T, [X | ResultTemp], Result)
-    ).
+    Category = row(X),
+    getCategoriesFromRow(T, [X | ResultTemp], Result).
 
 
+addCategoriesToMovie(Connection, Movie, [], Confirmacao):- Confirmacao is 1.
 addCategoriesToMovie(Connection, Movie, [Category | T], Confirmacao):-
     Movie = row(MovieId, _, _, _, _, _),
-    (T = [] ->
-        dbop:db_parameterized_query_no_return(
-            Connection,
-            "INSERT INTO categories VALUES (%w,'%w')",
-            [MovieId, Category]
-        ), Confirmacao is 1;
-        dbop:db_parameterized_query_no_return(
-            Connection,
-            "INSERT INTO categories VALUES (%w,'%w')",
-            [MovieId, Category]
-        ), addCategoriesToMovie(Connection, Movie, T, Confirmacao)    
-    ).
+    dbop:db_parameterized_query_no_return(
+        Connection,
+        "INSERT INTO categories VALUES (%w,'%w')",
+        [MovieId, Category]
+    ), addCategoriesToMovie(Connection, Movie, T, Confirmacao).
 
 
 getRecomendationsOfMovies(Connection, User, Movies):-
     getUsersWhoAvaluateWell(Connection, Users),
     avaluateRecomendations(Connection, Users, User, [], Movies).
-
 
 
 avaluateRecomendations(_, [], _, MoviesTemp, RecommendedMovies):- reverse(MoviesTemp, RecommendedMovies).
@@ -332,13 +297,10 @@ getMoviesAvaluatedWellByUser(Connection, User, Movies):-
     getMoviesById(Connection, MoviesIds, [], Movies).
 
 
+getMoviesIdFromRow([], ResultTemp, Result):- reverse(ResultTemp, Result).
 getMoviesIdFromRow([MovieId | T], ResultTemp, Result):-
-    (T = [] ->
-        MovieId = row(X, _),
-        reverse([X | ResultTemp], Result);
-        MovieId = row(X, _),
-        getEmailsFromRow(T, [X | ResultTemp], Result)
-    ).
+    MovieId = row(X, _),
+    getEmailsFromRow(T, [X | ResultTemp], Result).
 
 
 getUsersWhoAvaluateWell(Connection, Users):-
@@ -351,13 +313,10 @@ getUsersWhoAvaluateWell(Connection, Users):-
     user_operations:getUsersByEmail(Connection, Emails, [], Users).
 
 
+getEmailsFromRow([], ResultTemp, Result):- reverse(ResultTemp, Result).
 getEmailsFromRow([UserEmail | T], ResultTemp, Result):-
-    (T = [] ->
-        UserEmail = row(X),
-        reverse([X | ResultTemp], Result);
-        UserEmail = row(X),
-        getEmailsFromRow(T, [X | ResultTemp], Result)
-    ).
+    UserEmail = row(X),
+    getEmailsFromRow(T, [X | ResultTemp], Result).
 
 
 getTenBestMovies(Connection, Movies):-
@@ -384,11 +343,7 @@ addToWatchLaterList(Connection, User, Movie, Confirmacao):-
         Confirmacao is 0
     ).
 
-
+getMoviesIdFromMovies([], ResultTemp, Result):- reverse(ResultTemp, Result).
 getMoviesIdFromMovies([Movie | T], ResultTemp, Result):-
-    (T = [] ->
-        Movie = row(X, _, _, _, _, _),
-        reverse([X | ResultTemp], Result);
-        Movie = row(X, _, _, _, _, _),
-        getMoviesIdFromMovies(T, [X | ResultTemp], Result)
-    ).
+    Movie = row(X, _, _, _, _, _),
+    getMoviesIdFromMovies(T, [X | ResultTemp], Result).
