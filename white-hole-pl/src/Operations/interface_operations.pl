@@ -1,5 +1,6 @@
 :- module(interfaceop, [first_menu/1]).
 :- use_module('./util.pl', [get_input/2, clear_screen/0, clear_screen_with_confirmation/0]).
+:- use_module('./user_operations.pl').
 
 first_menu(Connection) :-
     writeln(''),
@@ -31,42 +32,81 @@ signin(Connection) :-
     get_input('Digite o seu e-mail:', UserEmail),
     writeln(''),
     get_input('Digite a sua senha:', UserPassword),
-    clear_screen_with_confirmation.
+    clear_screen,
     authenticate(Connection, UserEmail, UserPassword, Autenticated),
-    (Autenticated = "1" ->
+    (Autenticated =:= 1 ->
         getUserByEmail(Connection, UserEmail, User),
-        clear_screen, run(Connection, User);
-    (Autenticated = "0"->
+        run(Connection, User);
         writeln(''),
-        writeln('E-mail ou senha inválidos!');
-        !
-    )
+        writeln('E-mail ou senha inválidos!'),
+        clear_screen_with_confirmation  
+    ).
+
+signup(Connection) :-
+    writeln(''),
+    get_input('Digite o seu nome:', UserName),
+    (UserName = "" ->
+         writeln('Digite um nome valido'),
+         signup(Connection);
+         !
+    ),
+    writeln(''),
+    get_input('Digite o seu sobrenome:', UserSurName),
+    (UserSurName = "" ->
+         writeln('Digite um sobrenome valido'),
+         signup(Connection);
+         !
+    ), 
+    writeln(''),
+    get_input('Digite um E-mail:', UserEmail),
+    (UserEmail = "" ->
+         writeln('Digite um E-mail valido'),
+         signup(Connection);
+         !
+    ),
+    writeln(''),
+    get_input('Digite a sua senha (tem que ter no mínimo 8 caracteres):', UserPassword),
+    (UserPassword = "" ->
+         writeln('Digite uma senha valida'),
+         signup(Connection);
+         !
+    ), 
+
+    createUser(Connection, UserEmail, UserPassword, UserName, UserSurName, Confirmacao)
+    ,
+
+    (Confirmacao =:= 1 ->
+         writeln('Usuario cadastrado com sucesso!'),
+         clear_screen_with_confirmation,
+         first_menu(Connection);
+         writeln('Usuario não cadastrado!'),
+         clear_screen_with_confirmation,
+         first_menu(Connection)
     ).
 
 
 
-signup(Connection) :-
+
+    
+
+
+run(Connection, User) :-
+    writeln('1 - Procurar por filme ou série'),
+    writeln('2 - Minha lista de marcados para assistir depois'),
+    writeln('3 - 10 melhores filmes'),
+    writeln('4 - 10 melhores séries'),
+    writeln('5 - 10 melhores filmes por categoria'),
+    writeln('6 - 10 melhores séries por categoria'),
+    writeln('7 - Recomendações para mim'),
+    writeln('8 - Logout'),
     writeln(''),
-    get_input('Digite o seu nome:', userName),
-    writeln(''),
-    check_valid_value(userName, Connection),
+    get_input('Digite a opção desejada: ', Opc),
+    (Opc = "1" ->
+        clear_screen, search(Connection, User), run(Connection, User);
+        !
+    ).
 
-    get_input('Digite seu sobrenome:', userSurname),
-    check_valid_value(userSurname, Connection),
-    writeln(''),
+search(Connection, User) :-
+    writeln('---------------------- PESQUISAR ------------------------').
+    
 
-    get_input('Digite um e-mail', userEmail),
-    check_valid_value(userEmail, Connection),
-    writeln(''),
-
-    get_input('Digite a sua senha (tem que ter no mínimo 8 caracteres):', userPassword),
-    check_valid_value(userPassword, Connection),
-    writeln(''),
-
-    /* cahamda da função que envia os dados. */
-
-
-    clear_screen_with_confirmation,
-    first_menu(Connection).
-
-check_valid_value("", Connection):- writeln('Digite valores validos na próxima!'), writeln(''), clear_screen_with_confirmation, signup(Connection).
