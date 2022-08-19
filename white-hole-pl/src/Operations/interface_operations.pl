@@ -37,11 +37,11 @@ signin(Connection) :-
         getUserByEmail(Connection, UserEmail, User),
         clear_screen, run(Connection, User);
     (Autenticated = "0"->
-        writeln'',
-        writeln'E-mail ou senha inválidos!';
+        writeln(''),
+        writeln('E-mail ou senha inválidos!');
         !
     )
-    )
+    ).
 
 
 
@@ -69,4 +69,4 @@ signup(Connection) :-
     clear_screen_with_confirmation,
     first_menu(Connection).
 
-check_valid_value("", Connection):- writeln('Digite valores validos na próxima!'), writeln(''), clear_screen_with_confirmation, signup(Connection)
+check_valid_value("", Connection):- writeln('Digite valores validos na próxima!'), writeln(''), clear_screen_with_confirmation, signup(Connection).

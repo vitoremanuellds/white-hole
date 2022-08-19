@@ -25,12 +25,12 @@ userAlreadyExists(Connection, Email, Confirmacao):-
 
 
 authenticate(Connection, Email, Senha, Confirmacao):-
-    getUserByEmail(Connection, Email, User),
+    Q = "SELECT * FROM users WHERE email = '%w' and passwd = '%w'",
+    db_parameterized_query(Connection, Q, [Email, Senha], User),
     length(User, L),
     (L =:= 0 ->
         Confirmacao is 0;
-        User = [ row(_, SenhaReal, _, _) | _ ],
-        (Senha = SenhaReal -> Confirmacao is 1; Confirmacao is 0)
+        Confirmacao is 1
     ).
 
 
