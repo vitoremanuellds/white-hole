@@ -175,21 +175,22 @@ showMovieRating(Connection, Movie, Rating):-
 
 updateMovieRating(Connection, Movie, Rating):-
     Movie = row(MovieId, _, _, _, _, _),
-    showMovieRating(Connection, Movie, [ row(Sum, Count) | _ ]),
-    Q is round((Sum / Count) * 10) / 10,
+    showMovieRating(Connection, Movie, Rat),
+    Rat = row(S, C),
+    A is ((S / C) * 10),
+    B is round(A),
+    Rating is B / 10,
     dbop:db_parameterized_query_no_return(
         Connection,
         "UPDATE movies SET rating = %w WHERE movieid = %w;",
         [Q, MovieId]
     ).
 
+
 updateAllMovieRating(Connection, []).
 updateAllMovieRating(Connection, [Movie | T]):-
-    (T = [] ->
-        updateMovieRating(Connection, Movie, Rating);
-        updateMovieRating(Connection, Movie, Rating),
-        updateAllMovieRating(Connection, T)
-    ).
+    updateMovieRating(Connection, Movie, Rating),
+    updateAllMovieRating(Connection, T).
 
 
 

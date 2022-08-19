@@ -38,7 +38,7 @@ signin(Connection) :-
     clear_screen,
     authenticate(Connection, UserEmail, UserPassword, Autenticated),
     (Autenticated =:= 1 ->
-        getUserByEmail(Connection, UserEmail, User),
+        getUserByEmail(Connection, UserEmail, [User]),
         run(Connection, User);
         writeln(''),
         writeln('E-mail ou senha inválidos!'),

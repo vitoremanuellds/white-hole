@@ -39,7 +39,7 @@ avaluateSerie(Connection, User, Serie, Rating, Commentary, Confirmacao):-
     User = row(Email, Senha, Nome, Sobrenome),
     user_operations:userAlreadyExists(Connection, Email, Fstconf),
     getAvaluationsSeries(Connection, Email, Ratings),
-    getAvaluationsSeries(Ratings, [], SeriesIds),
+    getSerieIdFromRatings(Ratings, [], SeriesIds),
     (Fstconf =:= 1, member(Rating, [1, 2, 3, 4, 5]), Serie = row(SerieId, _, _, _, _, _), not(member(SerieId, SeriesIds)) -> 
         dbop:db_parameterized_query_no_return(
             Connection,
@@ -164,12 +164,15 @@ showSerieRating(Connection, Serie, Rating):-
 
 updateSerieRating(Connection, Serie, Rating):-
     Serie = row(SerieId, _, _, _, _, _),
-    showSerieRating(Connection, Serie, [ row(Sum, Count) | _ ]),
-    Q is round((Sum / Count) * 10) / 10,
+    showSerieRating(Connection, Serie, Rat),
+    Rat = row(S, C),
+    A is ((S / C) * 10),
+    B is round(A),
+    Rating is B / 10,
     dbop:db_parameterized_query_no_return(
         Connection,
         "UPDATE series SET rating = %w WHERE seriesid = %w;",
-        [Q, SerieId]
+        [Rating, SerieId]
     ).
 
 
