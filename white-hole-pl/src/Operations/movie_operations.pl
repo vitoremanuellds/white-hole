@@ -184,7 +184,7 @@ showMovieRating(Connection, Movie, Rating):-
     Movie = row(MovieId, _, _, _, _, _),
     dbop:db_parameterized_query(
         Connection,
-        "SELECT SUM(rating), COUNT(rating) FROM ratings WHERE movieid=%w;",
+        "SELECT COALESCE(SUM(rating), 0), COUNT(rating) FROM ratings WHERE movieid=%w;",
         [MovieId],
         [Rating]
     ).
@@ -192,7 +192,7 @@ showMovieRating(Connection, Movie, Rating):-
 
 updateMovieRating(Connection, Movie, Rating):-
     Movie = row(MovieId, _, _, _, _, _),
-    showMovieRating(Connection, Movie, [Sum, Count | _ ]),
+    showMovieRating(Connection, Movie, [ row(Sum, Count) | _ ]),
     Q is round((Sum / Count) * 10) / 10,
     dbop:db_parameterized_query_no_return(
         Connection,

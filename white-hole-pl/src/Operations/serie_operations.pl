@@ -51,14 +51,12 @@ avaluateSerie(Connection, User, Serie, Rating, Commentary, Confirmacao):-
     ).
 
 
-getSerieIdFromRatings([Rating|T], ResultTemp, Result):-
-    length(T, L),
-    (L > 0 ->
-        Rating = row(_, _, SerieId, _, _), 
-        getSerieIdFromRatings(T, [SerieId|ResultTemp], Result);
-        Rating = row(_, _, SerieId, _, _),
-        reverse([ SerieId | ResultTemp ], Result)
-    ).
+getSerieIdFromRatings([], ResultTemp, Result):- reverse(ResultTemp, Result).
+getSerieIdFromRatings([Rating|T], ResultTemp, Result):- 
+    Rating = row(_, _, SerieId, _, _), 
+    getSerieIdFromRatings(T, [SerieId|ResultTemp], Result).
+
+
 
 getRatingsSeries(Connection, Serie, Ratings):-
     Serie = row(SerieId, _, _, _, _, _),
@@ -70,19 +68,24 @@ getCastingSerie(Connection, Serie, Casting):-
     dbop:db_parameterized_query(Connection, "SELECT name, seriefunction FROM seriescasting WHERE seriesid = %w;", [SerieId], Casting).
 
 
+titleContainsWordSerie([], Serie, Confirmacao):- Confirmacao is 0.
 titleContainsWordSerie([Word|T], Serie, Confirmacao):-
     Serie = row(_, Title, _, _, _, _),
     length(T, L),
         (L > 0 ->
             string_lower(Title, S),
             split_string(S, " ", " ", Words),
-            (member(Word, Words) -> Confirmacao is 1 ; titleContainsWordSerie(T, Serie, Conf), (Conf =:= 1 -> Confirmacao is 1 ; Confirmacao is 0));
+            (member(Word, Words) -> 
+                Confirmacao is 1 ; titleContainsWordSerie(T, Serie, Conf), 
+                (Conf =:= 1 -> Confirmacao is 1 ; Confirmacao is 0)
+            );
             string_lower(Title, S),
             split_string(S, " ", " ", Words),
             (member(Word, Words) -> Confirmacao is 1 ; Confirmacao is 0)
         ).
 
 
+filterSeries([], Names, ResultTemp, Result):- reverse(ResultTemp, Result).
 filterSeries([Serie | T], Names, ResultTemp, Result):-
     length(T, L),
     (L > 0 ->
@@ -131,51 +134,37 @@ registerSerie(Connection, Title, ReleaseDate, Summary, Episodes, Serie):-
         [Serie]
     ).
 
-
+addCastingToSerie(Connection, Serie, [], Confirmacao):- Confirmacao is 1.
 addCastingToSerie(Connection, Serie, [Actor | T], Confirmacao):-
     Serie = row(SerieId, _, _, _, _, _),
-    ( T = [] ->
-        dbop:db_parameterized_query_no_return(
-            Connection,
-            "INSERT INTO seriescasting VALUES (%w,'%w', 'actor')",
-            [SerieId, Actor]
-        ), Confirmacao is 1
-        ;
-        dbop:db_parameterized_query_no_return(
-            Connection,
-            "INSERT INTO seriescasting VALUES (%w,'%w', 'actor')",
-            [SerieId, Actor]
-        ),
-        addCastingToSerie(Connection, Serie, T, Confirmacao)
-    ).
+    
+    dbop:db_parameterized_query_no_return(
+        Connection,
+        "INSERT INTO seriescasting VALUES (%w,'%w', 'actor')",
+        [SerieId, Actor]
+    ),
+    addCastingToSerie(Connection, Serie, T, Confirmacao).
 
 
+addDirectorsToSerie(Connection, Serie, [], Confirmacao):- Confirmacao is 1.
 addDirectorsToSerie(Connection, Serie, [Director | T], Confirmacao):-
     Serie = row(SerieId, _, _, _, _, _),
-    ( T = [] ->
-        dbop:db_parameterized_query_no_return(
-            Connection,
-            "INSERT INTO seriescasting VALUES (%w,'%w', 'director')",
-            [SerieId, Director]
-        ), Confirmacao is 1
-        ;
-        dbop:db_parameterized_query_no_return(
-            Connection,
-            "INSERT INTO seriescasting VALUES (%w,'%w', 'director')",
-            [SerieId, Director]
-        ),
-        addDirectorsToSerie(Connection, Serie, T, Confirmacao)
-    ).
+    dbop:db_parameterized_query_no_return(
+        Connection,
+        "INSERT INTO seriescasting VALUES (%w,'%w', 'director')",
+        [SerieId, Director]
+    ),
+    addDirectorsToSerie(Connection, Serie, T, Confirmacao).
 
 
 showSerieRating(Connection, Serie, Rating):-
     Serie = row(SerieId, _, _, _, _, _),
-    dbop:db_parameterized_query(Connection, "SELECT SUM(rating), COUNT(rating) FROM seriesratings WHERE serieid= %w;", [SerieId], [Rating]).
+    dbop:db_parameterized_query(Connection, "SELECT COALESCE(SUM(rating), 0), COUNT(rating) FROM seriesratings WHERE serieid= %w;", [SerieId], [Rating]).
 
 
 updateSerieRating(Connection, Serie, Rating):-
     Serie = row(SerieId, _, _, _, _, _),
-    showSerieRating(Connection, Serie, [Sum, Count | _ ]),
+    showSerieRating(Connection, Serie, [ row(Sum, Count) | _ ]),
     Q is round((Sum / Count) * 10) / 10,
     dbop:db_parameterized_query_no_return(
         Connection,
@@ -183,12 +172,11 @@ updateSerieRating(Connection, Serie, Rating):-
         [Q, SerieId]
     ).
 
+
+updateAllSerieRating(Connection, []).
 updateAllSerieRating(Connection, [Serie | T]):-
-    (T = [] ->
-        updateSerieRating(Connection, Serie, Rating);
-        updateSerieRating(Connection, Serie, Rating),
-        updateAllSerieRating(Connection, T)
-    ).
+    updateSerieRating(Connection, Serie, Rating),
+    updateAllSerieRating(Connection, T).
 
 
 getSeriesWithRatings(Connection, Serie):-
@@ -207,22 +195,15 @@ getSeriesByCategory(Connection, Category, Series):-
         Series
     ).
 
-
+getSeriesById(Connection, [], ResultTemp, Result):- reverse(ResultTemp, Result).
 getSeriesById(Connection, [SerieId | T], ResultTemp, Result):-
-    (T = [] ->
-        dbop:db_parameterized_query(
-            Connection,
-            "SELECT * FROM series WHERE serieid = %w",
-            [SerieId],
-            [Serie]
-        ), reverse([Serie | ResultTemp], Result);
-        dbop:db_parameterized_query(
-            Connection,
-            "SELECT * FROM series WHERE serieid = %w",
-            [SerieId],
-            [Serie]
-        ), getSeriesById(Connection, T, [Serie | ResultTemp], Result)
-    ).
+    dbop:db_parameterized_query(
+        Connection,
+        "SELECT * FROM series WHERE serieid = %w",
+        [SerieId],
+        [Serie]
+    ), getSeriesById(Connection, T, [Serie | ResultTemp], Result).
+    
 
 
 getWatchLaterListSeries(Connection, User, Series):-
@@ -249,30 +230,21 @@ getCategoriesOfSeriesInOneString(Connection, Serie, String):-
         util:concatenate_with_comma(Cats, String)
     ).
 
-
+getCategoriesFromRowSeries([], ResultTemp, Result):- reverse(ResultTemp, Result).
 getCategoriesFromRowSeries([Category | T], ResultTemp, Result):-
-    (T = [] ->
-        Category = row(X),
-        reverse([X | ResultTemp], Result);
-        Category = row(X),
-        getCategoriesFromRowSeries(T, [X | ResultTemp], Result)
-    ).
+    Category = row(X),
+    getCategoriesFromRowSeries(T, [X | ResultTemp], Result).
 
 
+addCategoriesToSeries(Connection, Series, [], Confirmacao):- Confirmacao is 1.
 addCategoriesToSeries(Connection, Series, [Category | T], Confirmacao):-
     Series = row(SeriesId, _, _, _, _, _),
-    (T = [] ->
-        dbop:db_parameterized_query_no_return(
-            Connection,
-            "INSERT INTO seriescategories VALUES (%w,'%w')",
-            [SeriesId, Category]
-        ), Confirmacao is 1;
-        dbop:db_parameterized_query_noreturn(
-            Connection,
-            "INSERT INTO seriescategories VALUES (%w,'%w')",
-            [SeriesId, Category]
-        ), addCategoriesToSeries(Connection, Series, T, Confirmacao)
-    ).
+    dbop:db_parameterized_query_no_return(
+        Connection,
+        "INSERT INTO seriescategories VALUES (%w,'%w')",
+        [SeriesId, Category]
+    ), addCategoriesToSeries(Connection, Series, T, Confirmacao).
+    
 
 
 getRecomendationsOfSeries(Connection, User, Seriess):-
@@ -310,14 +282,11 @@ getSeriesAvaluatedWellByUser(Connection, User, Series):-
     getSeriesById(Connection, SeriesIds, [], Series).
 
 
+getSeriesIdFromRow([], ResultTemp, Result):- reverse(ResultTemp, Result).
 getSeriesIdFromRow([SerieId | T], ResultTemp, Result):-
-    (T = [] ->
-        SerieId = row(X, _),
-        reverse([X | ResultTemp], Result);
-        SerieId = row(X, _),
-        getEmailsFromRowSeries(T, [X | ResultTemp], Result)
-    ).
-
+    SerieId = row(X, _),
+    getEmailsFromRowSeries(T, [X | ResultTemp], Result).
+    
 
 getUsersWhoAvaluateWellSeries(Connection, Users):-
     dbop:db_query(
@@ -329,13 +298,11 @@ getUsersWhoAvaluateWellSeries(Connection, Users):-
     user_operations:getUsersByEmail(Connection, Emails, [], Users).
 
 
+getEmailsFromRowSeries([], ResultTemp, Result):- reverse(ResultTemp, Result).
 getEmailsFromRowSeries([UserEmail | T], ResultTemp, Result):-
-    (T = [] ->
-        UserEmail = row(X),
-        reverse([X | ResultTemp], Result);
-        UserEmail = row(X),
-        getEmailsFromRowSeries(T, [X | ResultTemp], Result)
-    ).
+    UserEmail = row(X),
+    getEmailsFromRowSeries(T, [X | ResultTemp], Result).
+
 
 getTenBestSeries(Connection, Series):-
     dbop:db_query(
@@ -362,10 +329,7 @@ addToWatchLaterListSeries(Connection, User, Serie, Confirmacao):-
         Confirmacao is 0
     ).
 
+getSeriesIdFromSeries([], ResultTemp, Result):- reverse(ResultTemp, Result).
 getSeriesIdFromSeries([Serie | T], ResultTemp, Result):-
-    (T = [] ->
-        Serie = row(X, _, _, _, _, _),
-        reverse([X | ResultTemp], Result);
-        Serie = row(X, _, _, _, _, _),
-        getSeriesIdFromSeries(T, [X | ResultTemp], Result)
-    ).
+    Serie = row(X, _, _, _, _, _),
+    getSeriesIdFromSeries(T, [X | ResultTemp], Result).

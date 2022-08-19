@@ -32,7 +32,6 @@ createSerie(Connection):-
                 get_input("Qual a sinopse da série?", Sinopse),
                 get_input("Digite o nome dos diretores (separados por vírgula):", Directors),
                 get_input("Digite o nome dos atores (separados por vírgula):", Actors),
-                Summary,
                 ( Sinopse = "" -> Summary = "Sem sinopse"; Summary = Sinopse),
                 writeln(""),
                 writeln("Digite a quais categorias essa série pertence (digite os números associados separados por espaços):"),
@@ -206,8 +205,7 @@ newRating(Connection, User, Serie):-
     ( util:isANumber(N, Rating), member(N, [1,2,3,4,5]) ->
         writeln(""),
         get_input("Faça um comentário sobre a série (Se não quiser, basta apertar enter): ", C),
-        Comment,
-        ( C = "" -> Comment = "Sem comentário" ;
+        ( C = "" -> Comment = "Sem comentario" ;
             Comment = C
         ),
         writeln(""),
@@ -223,8 +221,7 @@ newRating(Connection, User, Serie):-
             ;
             writeln("Ok!" ),
             clear_screen_with_confirmation    
-        ),
-        clear_screen_with_confirmation
+        )
         ;
         writeln("Digite um valor válido na próxima vez!"), newRating(Connection, User, Serie)
     ).
