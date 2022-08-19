@@ -1,7 +1,8 @@
 :- module(serie_interface_operations, [
         createSerie/1,
         tenBestSeries/2,
-        printSeriesList/2
+        printSeriesList/2,
+        tenBestSeriesByCategory/2
     ]).
 :- use_module('./util.pl').
 :- use_module('../Db/dbOperations.pl').
