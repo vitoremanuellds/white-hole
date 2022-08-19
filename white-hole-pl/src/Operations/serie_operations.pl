@@ -199,10 +199,10 @@ getSeriesByCategory(Connection, Category, Series):-
     ).
 
 getSeriesById(Connection, [], ResultTemp, Result):- reverse(ResultTemp, Result).
-getSeriesById(Connection, [SerieId | T], ResultTemp, Result):-
+getSeriesById(Connection, [ row(SerieId, _) | T], ResultTemp, Result):-
     dbop:db_parameterized_query(
         Connection,
-        "SELECT * FROM series WHERE serieid = %w",
+        "SELECT * FROM series WHERE seriesid = %w",
         [SerieId],
         [Serie]
     ), getSeriesById(Connection, T, [Serie | ResultTemp], Result).

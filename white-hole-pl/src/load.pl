@@ -3,6 +3,7 @@
 :- use_module("./Operations/interface_operations.pl").
 :- use_module("./Operations/movie_operations.pl").
 :- use_module("./Operations/serie_operations.pl").
+:- use_module("./Operations/util.pl").
 
 load :-
     clear_screen,
@@ -15,7 +16,7 @@ load :-
     getMoviesWithRatings(Connection, Movies),
     writeln("Recuperando informações sobre séries... (Aguarde)"),
     clear_screen,
-    getMoviesWithRatings(Connection, Series),
+    getSeriesWithRatings(Connection, Series),
     writeln("Atualizando informações sobre filmes... (Aguarde)"),
     clear_screen,
     updateAllMovieRating(Connection, Movies),

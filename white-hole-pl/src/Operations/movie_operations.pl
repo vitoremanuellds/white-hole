@@ -183,7 +183,7 @@ updateMovieRating(Connection, Movie, Rating):-
     dbop:db_parameterized_query_no_return(
         Connection,
         "UPDATE movies SET rating = %w WHERE movieid = %w;",
-        [Q, MovieId]
+        [Rating, MovieId]
     ).
 
 
@@ -211,7 +211,7 @@ getMoviesByCategory(Connection, Category, Movies):-
     ).
 
 getMoviesById(Connection, [], ResultTemp, Result):- reverse(ResultTemp, Result).
-getMoviesById(Connection, [MovieId | T], ResultTemp, Result):-
+getMoviesById(Connection, [ row(MovieId, _) | T], ResultTemp, Result):-
     
     dbop:db_parameterized_query(
         Connection,
