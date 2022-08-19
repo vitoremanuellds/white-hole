@@ -2,11 +2,18 @@
         createSerie/1,
         tenBestSeries/2,
         printSeriesList/2,
-        tenBestSeriesByCategory/2
+        tenBestSeriesByCategory/2,
+        showSerie/3,
+        printCasting/2,
+        printCastingAux/1,
+        newRating/3,
+        printRatings/2,
+        printRatingsAux/1
     ]).
 :- use_module('./util.pl').
 :- use_module('../Db/dbOperations.pl').
 :- use_module('./user_operations.pl').
+:- use_module('./serie_operations.pl').
 
 
 createSerie(Connection):-
@@ -49,11 +56,11 @@ createSerie(Connection):-
                         clear_screen_with_confirmation;
                         registerSerie(Connection, Title, ReleaseDate, Episodes, Summary, Serie),
                         util:splitItems(Actors, ActorsAdd),
-                        addCastingToSerie(Connection, Serie, ActorsAdd),
+                        serie_operations:addCastingToSerie(Connection, Serie, ActorsAdd, _),
                         util:splitItems(Directors, DirectorsAdd),
-                        addDirectorsToSerie(Connection, Serie, DirectorsAdd),
+                        serie_operations:addDirectorsToSerie(Connection, Serie, DirectorsAdd, _),
                         util:convertCategories(SplitedCategories, [], CategoriesConverted),
-                        addCategoriesToSerie(Connection, Serie, CategoriesConverted),
+                        serie_operations:addCategoriesToSeries(Connection, Serie, CategoriesConverted, _),
                         writeln(""),
                         writeln("Série cadastrada com sucesso!"),
                         clear_screen_with_confirmation
@@ -70,13 +77,14 @@ createSerie(Connection):-
     ).
 
 
-printSeriesList([Serie | T], _).
+printSeriesList([], _).
 printSeriesList([Serie | T], Num):-
     Serie = row(_, Title, _, _, _, _),
     util:capitalize(Title, CapitalizedTitle),
-    swritef("%w  - %w", [Num, CapitalizedTitle], Saida),
+    swritef(Saida, "%w  - %w", [Num, CapitalizedTitle]),
     writeln(Saida),
-    printSeriesList(T, Num + 1).
+    NextNum is Num + 1,
+    printSeriesList(T, NextNum).
 
 
 tenBestSeries(Connection, User):-
@@ -119,7 +127,7 @@ tenBestSeriesByCategory(Connection, User):-
     ( OptionTrimmed \= "", util:isANumber(NOption, OptionTrimmed), NOption < 15, NOption > 0 ->
         clear_screen,
         writeln("As dez séries mais bem avaliadas dessa categoria no momento são (Se a categoria não contiver filmes o suficiente, pode não aparecer dez séries): "),
-        convertCategories([NOption], [], Categories),
+        util:convertCategories([NOption], [], Categories),
         getSeriesByCategory(Connection, Categories, Series),
         writeln(""),
         printSeriesList(Series, 1),
@@ -140,21 +148,22 @@ tenBestSeriesByCategory(Connection, User):-
     ).
 
 
-showSerie :: Connection -> User -> S.Serie -> IO ()
-showSerie conn user serie = do
-    writeln(""),
+showSerie(Connection, User, Serie):-
+    Serie = row(_, Title, RDate, Episodes, Summary, Rating),
+    util:capitalize(Title, CTitle),
     writeln("-------------------------------------------------"),
-    writeln(("     " ++ capitalize (S.title serie))),
+    writeln(CTitle),
     writeln("-------------------------------------------------"),
     writeln(""),
-    writeln(("Sinopse: " ++ S.summary serie)),
+    swritef(Sinopse, "Sinopse: %w", [Summary]),
+    writeln(Sinopse),
     writeln(""),
-    writeln(("Quantidade de episódios: " ++ S.episodes serie)),
-    writeln(("Data de lançamento: " ++ S.releaseDate serie)),
-    categories <- getCategoriesOfSeriesInOneString conn serie
-    writeln(("Categorias: " ++ capitalize categories)),
+    write("Quantidade de episódios: "), writeln(Episodes),
+    writeln("Data de lançamento: "), writeln(RDate),
+    getCategoriesOfSeriesInOneString(Connection, Serie, CategoriesString),
+    write("Categorias: "), writeln(CategoriesString),
     writeln(""),
-    writeln(("Nota geral: " ++ show (S.rating serie))),
+    write("Nota geral: "), writeln(Rating),
     writeln(""),
     writeln("1 - Mostrar casting da série."),
     writeln("2 - Marcar como assistir depois."),
@@ -162,82 +171,79 @@ showSerie conn user serie = do
     writeln("4 - Mostrar avaliações da série."),
     writeln("5 - Voltar."),
     writeln(""),
-    writeln("Digite a opção desejada: "),
-    hFlush stdout
-    option <- getLine
-    case option of
-        "1" -> clearScreenOnly >> printCasting conn serie >> showSerie conn user serie
-        "2" -> clearScreenOnly >> addToWatchLaterListSeries conn user serie >> writeln("Filme adicionado com sucesso na lista!" >> clearScreenWithConfirmation >> showSerie conn user serie),
-        "3" -> clearScreenOnly >> newRating conn user serie >> updateSerieRating conn serie >> showSerie conn user serie
-        "4" -> clearScreenOnly >> printRatings conn serie >> showSerie conn user serie
-        "5" -> clearScreenOnly 
-        x -> writeln("Digite uma opção válida" >> clearScreenWithConfirmation >> showSerie conn user serie),
+    get_input("Digite a opção desejada: ", Option),
+    ( Option = "1" -> clear_screen, printCasting(Connection, Serie), showSerie(Connection, User, Serie);
+    Option = "2" -> clear_screen, serie_operations:addToWatchLaterListSeries(Connection, User, Serie, _), writeln("Filme adicionado com sucesso na lista!"), clear_screen_with_confirmation, showSerie(Connection, User, Serie);
+    Option = "3" -> clear_screen, newRating(Connection, User, Serie), serie_operations:updateSerieRating(Connection, Serie, _), showSerie(Connection, User, Serie);
+    Option = "4" -> clear_screen, printRatings(Connection, Serie), showSerie(Connection, User, Serie);
+    Option = "5" -> clear_screen;
+        writeln("Digite uma opção válida"), clear_screen_with_confirmation, showSerie(Connection, User, Serie)
+    ).
+        
+
+printCasting(Connection, Serie):-
+    getCastingSerie(Connection, Serie, Casting),
+    ( Casting = [] -> writeln(""), writeln("Não há um Casting cadastrado para essa série!"), clear_screen_with_confirmation;
+    clear_screen,
+    writeln("------------------------------------------------"),
+    writeln("                    Casting"),
+    writeln("------------------------------------------------"),
+    writeln(""),
+    printCastingAux(Casting), clear_screen_with_confirmation
+    ).
 
 
+printCastingAux([]).
+printCastingAux([ row(X, Y) | T]):-
+    util:capitalize(Y, Name),
+    write("* "), write(X), write(" - "), writeln(Name),
+    printCastingAux(T).
 
-printCasting :: Connection -> S.Serie -> IO ()
-printCasting conn serie = do
-    casting <- getCastingSerie conn serie
-    if null casting then do 
-        writeln("" >> writeln"Não há um Casting cadastrado para essa série!" >> clearScreenWithConfirmation),
-    else do
-        clearScreenOnly
-        writeln("------------------------------------------------"),
-        writeln("                    Casting"),
-        writeln("------------------------------------------------"),
+
+newRating(Connection, User, Serie):-
+    writeln(""),
+    get_input("Dê uma nota para a série (De 1 a 5): ", Rating),
+    ( util:isANumber(N, Rating), member(N, [1,2,3,4,5]) ->
         writeln(""),
-        printCasting' casting >> clearScreenWithConfirmation
+        get_input("Faça um comentário sobre a série (Se não quiser, basta apertar enter): ", C),
+        Comment,
+        ( C = "" -> Comment = "Sem comentário" ;
+            Comment = C
+        ),
+        writeln(""),
+        get_input("Confirmar avaliação (s/N)", Confirmation),
+        string_lower(Confirmation, LowerCase),
+        ( Confirmation \= "", LowerCase \= "n" -> 
+            serie_operations:avaluateSerie(Connection, User, Serie, Rating, Comment, Conf),
+            ( Conf =:= 1 -> clear_screen,
+                writeln("Avaliação feita com sucesso!");
+                clear_screen,
+                writeln("Um mesmo usuário não pode avaliar a mesma série duas vezes!")
+            )
+            ;
+            writeln("Ok!" ),
+            clear_screen_with_confirmation    
+        ),
+        clear_screen_with_confirmation
+        ;
+        writeln("Digite um valor válido na próxima vez!"), newRating(Connection, User, Serie)
+    ).
 
 
-printCasting' :: [(String, String)] -> IO ()
-printCasting' [] = return ()
-printCasting' (x:xs) = do
-    writeln(("* " ++ fst x ++ " - " ++ capitalize (snd x))),
-    printCasting' xs
-
-
-newRating :: Connection -> User -> S.Serie -> IO ()
-newRating conn user serie = do
-    writeln(""),
-    writeln("Dê uma nota para a série (De 1 a 5): "),
-    nota <- getLine
-    if not (isANumber nota True && (read nota :: Int) `elem` [1..5]) then writeln("Digite um valor válido na próxima vez!" >> newRating conn user serie else writeln""),
-    writeln("Faça um comentário sobre a série (Se não quiser, basta apertar enter): "),
-    commentary <- getLine
-    let comment = if null commentary then "Sem comentário" else commentary
-    writeln(""),
-    writeln("Confirmar avaliação (s/N)"),
-    confirmation <- getLine
-    if null confirmation || map toLower confirmation == "n" then do 
-        writeln("Ok!" ),
-        clearScreenWithConfirmation
-    else do 
-        confirmation <- avaluateSerie conn user serie (read nota :: Integer) comment
-        if confirmation then do
-            clearScreenOnly
-            writeln("Avaliação feita com sucesso!"),
-        else do
-            clearScreenOnly
-            writeln("Um mesmo usuário não pode avaliar a mesma série duas vezes!"),
-        clearScreenWithConfirmation
-
-
-printRatings :: Connection -> S.Serie -> IO ()
-printRatings conn serie = do
-    ratings <- getRatingsSeries conn serie
-    if null ratings then do 
-        writeln("" >> writeln"Essa série ainda não foi avaliada por algum usuário!" >> clearScreenWithConfirmation),
-    else do 
+printRatings(Connection, Serie):-
+    getRatingsSeries(Connection, Serie, Ratings),
+    ( Ratings = [] -> writeln(""), writeln("Essa série ainda não foi avaliada por algum usuário!"), clear_screen_with_confirmation;
         writeln(""),
         writeln("------------------------------------------------"),
         writeln("                  Avaliações"),
         writeln("------------------------------------------------"),
         writeln(""),
-        printRatings' ratings >> clearScreenWithConfirmation
+        printRatingsAux(Ratings), clear_screen_with_confirmation
+    ).
 
 
-printRatings' :: [R.Rating] -> IO ()
-printRatings' [] = return ()
-printRatings' (x:xs) = do
-    writeln((R.userEmail x ++ " - " ++ show (R.rating x) ++ " - " ++ R.commentary x)),
-    printRatings' xs.
+printRatingsAux([]).
+printRatingsAux([row(_, Email, _, Rating, Comment) | T]):-
+    write(Email), write(" - "), write(Rating), write(" - "), writeln(Comment),
+    printRatingsAux(T).
+

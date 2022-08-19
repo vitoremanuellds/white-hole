@@ -3,6 +3,7 @@
 :- use_module('./user_operations.pl').
 :- use_module('./movie_operations.pl').
 :- use_module('./serie_operations.pl').
+:- use_module('./serie_interface_operations.pl').
 
 first_menu(Connection) :-
     writeln(''),
@@ -99,9 +100,9 @@ run(Connection, User) :-
         Option = "1" -> clear_screen, search(Connection, User), run(Connection, User);
         Option = "2" -> clear_screen, myList(Connection, User), run(Connection, User);
         Option = "3" -> clear_screen, tenBestMovies(Connection, User), run(Connection, User);
-        Option = "4" -> clear_screen, tenBestSeries(Connection, User), run(Connection, User);
+        Option = "4" -> clear_screen, serie_interface_operations:tenBestSeries(Connection, User), run(Connection, User);
         Option = "5" -> clear_screen, tenBestMoviesByCategory(Connection, User), run(Connection, User);
-        Option = "6" -> clear_screen, tenBestSeriesByCategory(Connection, User), run(Connection, User);
+        Option = "6" -> clear_screen, serie_interface_operations:tenBestSeriesByCategory(Connection, User), run(Connection, User);
         Option = "7" -> clear_screen, recomendations(Connection, User), run(Connection, User);
         Option = "8" -> writeln(""), writeln("Até mais, volte sempre!");
             writeln("Digite uma opção válida"), clear_screen_with_confirmation, run(Connection, User)
@@ -131,7 +132,7 @@ myList(Connection, User):-
     writeln("------ Minha Lista Para Assistir Depois ------"),
     writeln(""),
     movie_operations:getWatchLaterList(Connection, User, Movies),
-    serie_operations:getWatchLaterListSeries(Connection, User, Series),
+    serie_operations:getWatchLaterList(Connection, User, Series),
     writeln("Filmes:"),
     writeln(""),
     (Movies = [] -> writeln("Lista vazia"); printMoviesList(Movies, 1)),
