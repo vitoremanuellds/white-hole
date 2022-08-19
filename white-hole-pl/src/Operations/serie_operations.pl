@@ -87,9 +87,6 @@ searchSerie(Connection, Title, Series):-
         Serie = [S], filterSeries(Result, QWords, [S], Series)
     ).
 
-getPlataformToWatchSeries :: Connection -> S.Serie -> IO [String]
-getPlataformToWatchSeries conn serie = undefined
-
 
 registerSerie(Connection, Title, ReleaseDate, Summary, Episodes, Serie):-
     db_parameterized_query_no_return(
@@ -175,7 +172,7 @@ getSeriesWithRatings(Connection, Serie):-
 getSeriesByCategory(Connection, Category, Series):-
     dbop:db_parameterized_query(
         Connection,
-        "select seriesid, title, releasedate, episodes, summary, rating from ((select seriesid as sid, category from seriescategories c where category = '%w') as c join (select s.seriesid, s.title, s.releasedate, s.episodes, s.summary, s.rating from (series s left outer join (select coalesce(c1 - c2, c1) as c, sid1 as sid from (((select count(serieid) as c1, serieid as sid1 from seriesratings where rating > 3 group by sid1 order by c1 desc) as one left outer join (select count(serieid) as c2, serieid as sid2 from seriesratings where rating < 4 group by sid2 order by c2 desc) as two on one.sid1 = two.sid2)) order by c desc) r on s.seriesid = r.sid) order by c desc nulls last) s on c.sid = s.seriesid) order by rating desc limit 10;"
+        "select seriesid, title, releasedate, episodes, summary, rating from ((select seriesid as sid, category from seriescategories c where category = '%w') as c join (select s.seriesid, s.title, s.releasedate, s.episodes, s.summary, s.rating from (series s left outer join (select coalesce(c1 - c2, c1) as c, sid1 as sid from (((select count(serieid) as c1, serieid as sid1 from seriesratings where rating > 3 group by sid1 order by c1 desc) as one left outer join (select count(serieid) as c2, serieid as sid2 from seriesratings where rating < 4 group by sid2 order by c2 desc) as two on one.sid1 = two.sid2)) order by c desc) r on s.seriesid = r.sid) order by c desc nulls last) s on c.sid = s.seriesid) order by rating desc limit 10;",
         [Category],
         Series
     ).
@@ -285,7 +282,7 @@ getSeriesAvaluatedWellByUser(Connection, User, Series):-
 
 getSeriesIdFromRow([SerieId | T], ResultTemp, Result):-
     (T = [] ->
-        SerieId = row(X, ),
+        SerieId = row(X, _),
         reverse([X | ResultTemp], Result);
         SerieId = row(X, _),
         getEmailsFromRow(T, [X | ResultTemp], Result)

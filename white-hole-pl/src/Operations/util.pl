@@ -2,7 +2,7 @@
 
 get_input(Prompt, Input) :- 
     writeln(Prompt),
-    read_string(userinput, "\n", "\t ", _, Input).
+    read_string(user_input, "\n", "\t ", _, Input).
 
 clear_screen :- write('\e[2J\e[H\e[3J').
 
@@ -10,7 +10,7 @@ clear_screen_with_confirmation :- writeln(''), get_input('(Aperte Enter)', Input
 
 isANumber(Number,String):- number_string(Number, String).
 
-splitItems(String, Items) = split_string(String, ",", " ", Items).
+splitItems(String, Items):- split_string(String, ",", " ", Items).
 
 capitalize(String, Result):- string_upper(String, Result).
 
