@@ -74,3 +74,7 @@ SSLmode     = require
 - Baixe o driver do PostgreSQL ODBC para Windows. Você pode baixá-lo clicando <a href="https://www.postgresql.org/ftp/odbc/versions/msi/" target="_blank">aqui</a>.
 - Para configurar o driver ODBC, pesquise no menu iniciar por ODBC e abra a opção que apareceu. Logo em seguida, adicione um novo DNS de Usuário selecionando o driver do PostgreSQL e colocando as informações necessárias para se conectar com o PostgreSQL. O nome da Data Source deve ser <code>SWI-Prolog</code>.
 - Teste a conexão com o banco de dados e salve.
+
+## Para rodar o programa
+
+Execute dentro da pasta /src o comando <code>swipl run.pl</code>.
