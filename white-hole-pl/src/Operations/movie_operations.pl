@@ -274,7 +274,9 @@ avaluateRecomendations(Connection, [User | T], UserX, MoviesTemp, RecommendedMov
         getMoviesAvaluatedWellByUser(Connection, User, Movies),
         getMoviesAvaluatedWellByUser(Connection, UserX, MyMovies),
         intersection(Movies, MyMovies, Alike),
-        (length(Alike, ALength), length(MyMovies, MyMLength), ALength > (MyMLength // 2) + 1 ->
+        length(Alike, ALength), length(MyMovies, MyMLength), 
+        Length is (MyMLength // 2) + 1,
+        ( ALength > Length -> 
             subtract(Movies, MyMovies, Rec),
             append(Rec, MoviesTemp, MoviesTempTemp),
             avaluateRecomendations(Connection, T, UserX, MoviesTempTemp, RecommendedMovies);

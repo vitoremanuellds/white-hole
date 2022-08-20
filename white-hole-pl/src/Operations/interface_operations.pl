@@ -187,8 +187,8 @@ myList(Connection, User):-
     writeln(""),
     writeln("Séries:"),
     writeln(""),
-    
-    (Series = [] -> writeln("Lista vazia"); length(Movies, MLength), printSeriesList(Movies, MLength + 1)),
+    SL is MLength + 1,
+    (Series = [] -> writeln("Lista vazia"); length(Movies, MLength), printSeriesList(Movies, SL)),
 
     writeln(""),
     writeln("Opções:"),
@@ -245,14 +245,12 @@ recomendations(Connection, User):-
     writeln("Filmes:"),
     writeln(""),
     getTenBestMovies(Connection, TenBestMovies),
-    MLength,
     ( Movies = [] -> length(TenBestMovies, MLength), printMoviesList(TenBestMovies, 1); length(Movies, MLength), printMoviesList(Movies, 1) ),
     writeln(""),
     writeln("Séries:"),
     writeln(""),
     getTenBestSeries(Connection, TenBestSeries),
-    SLength,
-    ( Series = [] -> length(TenBestSeries, SLength), printMoviesList(TenBestSeries, 1); length(Series, SLength), printSeriesList(Series, MLength + 1) ),
+    ( Series = [] -> length(TenBestSeries, SLength), printMoviesList(TenBestSeries, 1); length(Series, SLength), MSL is MLength + 1, printSeriesList(Series, MSL) ),
     writeln(""),
     get_input("Qual filme ou série você quer acessar? (Digite o número do filme/série da lista; Se quiser voltar, aperte Enter)", Choice),
     ( Choice = "" -> 

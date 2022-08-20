@@ -262,7 +262,9 @@ avaluateRecomendationsSeries(Connection, [User | T], UserX, SeriesTemp, Recommen
         getSeriesAvaluatedWellByUser(Connection, User, Series),
         getSeriesAvaluatedWellByUser(Connection, UserX, MySeries),
         intersection(Series, MySeries, Alike),
-        (length(Alike, ALength), length(MySeries, MyMLength), ALength > (MyMLength // 2) + 1 ->
+        length(Alike, ALength), length(MySeries, MyMLength), 
+        Length is (MyMLength // 2) + 1,
+        (ALength > Length ->
             subtract(Series, MySeries, Rec),
             append(Rec, SeriesTemp, SeriesTempTemp),
             avaluateRecomendationsSeries(Connection, T, UserX, SeriesTempTemp, RecommendedSeries);
