@@ -26,7 +26,8 @@ No Ubuntu é preciso somente executar, com permissão de administrador, o seguin
 
 No Fedora é preciso executar um comando, com permissão de administrador,  um pouco diferente para baixar o pacote libpq-devel (o nome realmente é um pouco diferente):
 
-<code>dnf install libpq-dev</code>
+<code>dnf install libpq-devel</code>
+
 
 Logo após disso, o projeto está pronto para funcionar.
 
@@ -41,4 +42,4 @@ White Hole usa o PostgreSQL e se conecta a ele por auxílio da biblioteca postgr
 
 Para criar essas variáveis de ambiente no Windows, você precisa pesquisar no menu iniciar por variáveis de ambientes, abre o programa que foi achado, clica em variáveis de ambiente e clica em Novo, onde você vai colocar o nome da variável, do mesmo jeito que está escrito acima, e os valores que você pode adquirir conosco. <strong>Entre em contato conosco para adquirir as credenciais para se conectar</strong>.
 
-No linux, basta usar o comando <code>EXPORT nome="valor"</code> trocando nome pelos nomes acimas e o valor pelas credenciais adquiridas conosco. Para fazer essas variáveis de ambiente persistirem, é preciso colocar esses comandos no final do arquivo .bashrc que fica na /home do usuário.
+No linux, basta usar o comando <code>export nome="valor"</code> trocando nome pelos nomes acimas e o valor pelas credenciais adquiridas conosco. Para fazer essas variáveis de ambiente persistirem, é preciso colocar esses comandos no final do arquivo .bashrc que fica na /home do usuário.
