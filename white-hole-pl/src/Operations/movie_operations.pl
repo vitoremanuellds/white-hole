@@ -53,7 +53,7 @@ avaluateMovie(Connection, User, Movie, Rating, Commentary, Confirmacao):-
 
 getMovieIdFromRatings([], ResultTemp, Result):- reverse(ResultTemp, Result).
 getMovieIdFromRatings([Rating|T], ResultTemp, Result):-
-    Rating = row(, , MovieId, , ), 
+    Rating = row(_, _, MovieId, _, _), 
     getMovieIdFromRatings(T, [ MovieId | ResultTemp ], Result).
         
 
