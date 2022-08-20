@@ -4,6 +4,8 @@
 :- use_module('./movie_operations.pl').
 :- use_module('./serie_operations.pl').
 :- use_module('./serie_interface_operations.pl').
+:- use_module('./movie_interface_operations.pl').
+
 
 first_menu(Connection) :-
     writeln(''),
@@ -86,6 +88,8 @@ signup(Connection) :-
 
 
 run(Connection, User) :-
+    writeln('Olá!'),
+    writeln(''),
     writeln('1 - Procurar por filme ou série'),
     writeln('2 - Minha lista de marcados para assistir depois'),
     writeln('3 - 10 melhores filmes'),
@@ -132,7 +136,7 @@ myList(Connection, User):-
     writeln("------ Minha Lista Para Assistir Depois ------"),
     writeln(""),
     movie_operations:getWatchLaterList(Connection, User, Movies),
-    serie_operations:getWatchLaterList(Connection, User, Series),
+    serie_operations:getWatchLaterListSeries(Connection, User, Series),
     writeln("Filmes:"),
     writeln(""),
     (Movies = [] -> writeln("Lista vazia"); printMoviesList(Movies, 1)),
