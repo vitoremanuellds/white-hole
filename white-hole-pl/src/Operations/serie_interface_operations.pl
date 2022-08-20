@@ -96,7 +96,7 @@ tenBestSeries(Connection, User):-
     get_input("Digite o número da séries para acessá-la (aperte enter para voltar):", Option),
     length(Series, SLength),
     (Option = "" -> clear_screen;
-        ( util:isANumber(NOption, Option), NOption < SLength + 1, NOption > 0 ->
+        ( util:isANumber(NOption, Option), NOption =< SLength, NOption > 0 ->
             clear_screen,
             nth1(NOption, Series, Serie),
             showSerie(Connection, User, Serie),

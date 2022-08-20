@@ -87,7 +87,7 @@ signup(Connection) :-
     ).
 
 
-run(Connection, User) :-
+run(Connection, User):-
     writeln('Olá!'),
     writeln(''),
     writeln('1 - Procurar por filme ou série'),
@@ -113,9 +113,52 @@ run(Connection, User) :-
     ).
 
 
-search(Connection, User) :-
-    writeln('---------------------- PESQUISAR ------------------------').
-    
+search(Connection, User):-
+    writeln('---------------------- PESQUISAR ------------------------'),
+    writeln(""),
+    writeln("Digite o nome do filme ou série que deseja pesquisar (Se "),
+    writeln("quiser voltar, aperte enter):"),
+    get_input("", Title),
+    util:strip(Title, TitleTrimmed),
+    (TitleTrimmed = "" -> clear_screen ;
+        writeln(""),
+        string_lower(TitleTrimmed, TitleForSearch),
+        searchMovie(Connection, TitleForSearch, Movies),
+        searchSerie(Connection, TitleForSearch, Series),
+        ( Movies = [], Series = [] -> 
+            writeln("Não foi encontrado nenhum filme ou série com esse título!" );
+            writeln("Filmes:"),
+            writeln(""),
+            printMoviesList(Movies, 1),
+            writeln(""),
+            writeln("Séries:"),
+            writeln(""),
+            length(Movies, MLength),
+            SeriesNum is MLength + 1,
+            printSeriesList(Series, SeriesNum)
+            ),
+        writeln(""),
+        writeln("Digite o número correspondente ao filme ou a série que quer ver ou as opções abaixo:"),
+        writeln("( p - Pesquisar novamente; v - Voltar ao menu principal; c - Cadastrar um novo filme ou série): "),
+        get_input("", Option),
+        ( Option = "v" -> clear_screen;
+            Option = "p" -> clear_screen, search(Connection, User);
+            Option = "c" -> clear_screen, registerMovieSerie(Connection, User);
+            length(Movies, MLength), length(Series, SLength), Total is MLength + SLength,
+            util:isANumber(NOption, Option), NOption =< Total, NOption > 0, Option \= "" ->
+                ( NOption =< MLength -> 
+                    nth1(NOption, Movies, Movie),
+                    clear_screen, showMovie(Connection, User, Movie),search(Connection, User)
+                    ;
+                    SIndex is NOption - MLength,
+                    nth1(SIndex, Series, Serie),
+                    clear_screen, showSerie(Connection, User, Serie),search(Connection, User)
+                )
+                ;
+                writeln("Digite uma opção válida na próxima vez."), clear_screen_with_confirmation    
+            )
+        ).
+
 
 registerMovieSerie(Connection, User):-
     writeln(""),
@@ -162,7 +205,7 @@ myList(Connection, User):-
             length(Movies, MLength), length(Series, SLength),
             ( util:isANumber(NChoice, Choice), NChoice < MLength + SLength ->
                 ( NChoice > 1 -> 
-                    ( NChoice < MLength + 1 ->
+                    ( NChoice =< MLength ->
                         nth1(NChoice, Movies, Movie),
                         clear_screen, 
                         showMovie(Connection, User, Movie), myList(Connection, User);
@@ -217,7 +260,7 @@ recomendations(Connection, User):-
             length(Movies, MLength), length(Series, SLength),
             ( util:isANumber(NChoice, Choice), NChoice < MLength + SLength ->
                 ( NChoice > 1 -> 
-                    ( NChoice < MLength + 1 ->
+                    ( NChoice =< MLength ->
                         nth1(NChoice, Movies, Movie),
                         clear_screen, 
                         showMovie(Connection, User, Movie), recomendations(Connection, User);

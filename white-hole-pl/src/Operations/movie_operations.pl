@@ -36,7 +36,7 @@
 
 
 avaluateMovie(Connection, User, Movie, Rating, Commentary, Confirmacao):-
-    User = row(Email, _, _, _),
+    User = row(Email, Senha, Nome, Sobrenome),
     Movie = row(MovieId, _, _, _, _, _),
     user_operations:userAlreadyExists(Connection, Email, Fstconf),
     getAvaluations(Connection, Email, Ratings),
@@ -46,8 +46,8 @@ avaluateMovie(Connection, User, Movie, Rating, Commentary, Confirmacao):-
             Connection,
             "INSERT INTO ratings (useremail, movieid, rating, commentary) values ('%w', %w, %w, '%w')",
             [Email, MovieId, Rating, Commentary]
-        ), Confirmacao is 1
-        ;
+        ), 
+        Confirmacao is 1;
         Confirmacao is 0
     ).
 
@@ -80,7 +80,7 @@ getCasting(Connection, Movie, Casting):-
 
 titleContainsWordMovie([], Movie, Confirmacao):- Confirmacao is 0.
 titleContainsWordMovie([Word|T], Movie, Confirmacao):-
-    Movie = row(MovieId, _, _, _, _, _),
+    Movie = row(MovieId, Title, _, _, _, _),
     length(T, L),
     (L > 0 ->
         string_lower(Title, S),

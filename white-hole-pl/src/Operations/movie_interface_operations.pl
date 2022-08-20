@@ -4,11 +4,11 @@
         tenBestMovies/2,
         tenBestMoviesByCategory/2,
         showMovie/3,
-        printCasting/2,
-        printCastingAux/1,
-        newRating/3,
-        printRatings/2,
-        printRatingsAux/1
+        printCastingM/2,
+        printCastingAuxM/1,
+        newRatingM/3,
+        printRatingsM/2,
+        printRatingsAuxM/1
     ]).
 :- use_module('./util.pl').
 :- use_module('../Db/dbOperations.pl').
@@ -19,8 +19,10 @@ createMovie(Connection):-
     writeln(""),
     get_input("Qual o título do filme?", X),
     util:strip(X, Title),
-    (Title = "" -> writeln("O filme deve ter um título!"), 
-        clear_screen_with_confirmation;
+    (Title = "" -> 
+        writeln("O filme deve ter um título!"), 
+        clear_screen_with_confirmation
+        ;
         get_input("Qual a data de lançamento do filme? (yyyy-mm-dd)", Y),
         util:strip(Y, ReleaseDate),
         (ReleaseDate = "" -> writeln("A data deve ser uma data válida!"),
@@ -31,7 +33,6 @@ createMovie(Connection):-
                 get_input("Qual a sinopse do filme?", Sinopse),
                 get_input("Digite o nome dos diretores (separados por vírgula):", Directors),
                 get_input("Digite o nome dos atores (separados por vírgula):", Actors),
-                Summary,
                 ( Sinopse = "" -> Summary = "Sem sinopse"; Summary = Sinopse),
                 writeln(""),
                 writeln("Digite a quais categorias esse filme pertence (digite os números associados separados por espaços):"),
@@ -55,11 +56,11 @@ createMovie(Connection):-
                         clear_screen_with_confirmation;
                         registerMovie(Connection, Title, ReleaseDate, Duration, Summary, Movie),
                         util:splitItems(Actors, ActorsAdd),
-                        addCastingToMovie(Connection, Movie, ActorsAdd),
+                        addCastingToMovie(Connection, Movie, ActorsAdd, Conf),
                         util:splitItems(Directors, DirectorsAdd),
-                        addDirectorsToMovie(Connection, Movie, DirectorsAdd),
+                        addDirectorsToMovie(Connection, Movie, DirectorsAdd, Conf),
                         util:convertCategories(SplitedCategories, [], CategoriesConverted),
-                        addCategoriesToMovie(Connection, Movie, CategoriesConverted),
+                        addCategoriesToMovie(Connection, Movie, CategoriesConverted, Conf),
                         writeln(""),
                         writeln("Filme cadastrado com sucesso!"),
                         clear_screen_with_confirmation
@@ -72,8 +73,9 @@ createMovie(Connection):-
                 writeln("Digite uma duração válida"),
                 clear_screen_with_confirmation
             )
-        ),
+        )
     ).
+
 
 printMoviesList([], _).
 printMoviesList([Movie | T], Num):-
@@ -94,7 +96,7 @@ tenBestMovies(Connection, User):-
     get_input("Digite o número do filme para acessá-lo (aperte enter para voltar):", Option),
     length(Movies, SLength),
     (Option = "" -> clear_screen;
-        ( util:isANumber(NOption, Option), NOption < SLength + 1, NOption > 0 ->
+        ( util:isANumber(NOption, Option), NOption =< SLength, NOption > 0 ->
             clear_screen,
             nth1(NOption, Movies, Movie),
             showMovie(Connection, User, Movie),
@@ -167,15 +169,15 @@ showMovie(Connection, User, Movie):-
     writeln("5 - Voltar."),
     writeln(""),
     get_input("Digite a opção desejada: ", Option),
-    ( Option = "1" -> clear_screen, printCasting(Connection, Movie), showMovie(Connection, User, Movie);
+    ( Option = "1" -> clear_screen, printCastingM(Connection, Movie), showMovie(Connection, User, Movie);
     Option = "2" -> clear_screen, movie_operations:addToWatchLaterList(Connection, User, Movie, _), writeln("Filme adicionado com sucesso na lista!"), clear_screen_with_confirmation, showMovie(Connection, User, Movie);
-    Option = "3" -> clear_screen, newRating(Connection, User, Movie), movie_operations:updateMovieRating(Connection, Movie, _), showMovie(Connection, User, Movie);
-    Option = "4" -> clear_screen, printRatings(Connection, Movie), showMovie(Connection, User, Movie);
+    Option = "3" -> clear_screen, newRatingM(Connection, User, Movie), movie_operations:updateMovieRating(Connection, Movie, _), showMovie(Connection, User, Movie);
+    Option = "4" -> clear_screen, printRatingsM(Connection, Movie), showMovie(Connection, User, Movie);
     Option = "5" -> clear_screen;
         writeln("Digite uma opção válida"), clear_screen_with_confirmation, showMovie(Connection, User, Movie)
     ).
 
-printCasting(Connection, Movie):-
+printCastingM(Connection, Movie):-
     getCasting(Connection, Movie, Casting),
     ( Casting = [] -> writeln(""), writeln("Não há um Casting cadastrado para esse filme!"), clear_screen_with_confirmation;
     clear_screen,
@@ -183,16 +185,16 @@ printCasting(Connection, Movie):-
     writeln("                    Casting"),
     writeln("------------------------------------------------"),
     writeln(""),
-    printCastingAux(Casting), clear_screen_with_confirmation
+    printCastingAuxM(Casting), clear_screen_with_confirmation
     ).
 
-printCastingAux([]).
-printCastingAux([ row(X, Y) | T]):-
+printCastingAuxM([]).
+printCastingAuxM([ row(X, Y) | T]):-
     util:capitalize(Y, Name),
     write("* "), write(X), write(" - "), writeln(Name),
-    printCastingAux(T).
+    printCastingAuxM(T).
 
-newRating(Connection, User, Movie):-
+newRatingM(Connection, User, Movie):-
     writeln(""),
     get_input("Dê uma nota para o filme (De 1 a 5): ", Rating),
     ( util:isANumber(N, Rating), member(N, [1,2,3,4,5]) ->
@@ -216,23 +218,23 @@ newRating(Connection, User, Movie):-
             clear_screen_with_confirmation    
         )
         ;
-        writeln("Digite um valor válido na próxima vez!"), newRating(Connection, User, Movie)
+        writeln("Digite um valor válido na próxima vez!"), newRatingM(Connection, User, Movie)
     ).
 
 
-printRatings(Connection, Movie):-
-    getRatingsMovies(Connection, Movie, Ratings),
+printRatingsM(Connection, Movie):-
+    getRatings(Connection, Movie, Ratings),
     ( Ratings = [] -> writeln(""), writeln("Esse filme ainda não foi avaliado por algum usuário!"), clear_screen_with_confirmation;
         writeln(""),
         writeln("------------------------------------------------"),
         writeln("                  Avaliações"),
         writeln("------------------------------------------------"),
         writeln(""),
-        printRatingsAux(Ratings), clear_screen_with_confirmation
+        printRatingsAuxM(Ratings), clear_screen_with_confirmation
     ).
 
 
-printRatingsAux([]).
-printRatingsAux([row(_, Email, _, Rating, Comment) | T]):-
+printRatingsAuxM([]).
+printRatingsAuxM([row(_, Email, _, Rating, Comment) | T]):-
     write(Email), write(" - "), write(Rating), write(" - "), writeln(Comment),
-    printRatingsAux(T).
+    printRatingsAuxM(T).

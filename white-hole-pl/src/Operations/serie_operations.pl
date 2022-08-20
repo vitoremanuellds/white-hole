@@ -322,7 +322,7 @@ addToWatchLaterListSeries(Connection, User, Serie, Confirmacao):-
         getWatchLaterListSeries(Connection, User, Series),
         getSeriesIdFromSeries(Series, [], SeriesId),
         (member(SerieId, SeriesId) -> Confirmacao is 0;
-            dbop:db_parameterized_query_noreturn(
+            dbop:db_parameterized_query_no_return(
                 Connection,
                 "INSERT INTO watchlaterlistseries values ('%w',%w)",
                 [Email, SerieId]
