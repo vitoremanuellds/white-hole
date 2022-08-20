@@ -28,6 +28,7 @@ No Fedora é preciso executar um comando, com permissão de administrador,  um p
 
 <code>dnf install libpq-devel</code>
 
+
 Logo após disso, o projeto está pronto para funcionar.
 
 ## Como configurar a conexão do banco de dados

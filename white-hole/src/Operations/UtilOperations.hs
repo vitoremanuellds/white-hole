@@ -37,6 +37,7 @@ convertCategories (x:xs) result = do
     convertCategories xs (categories !! ((read x :: Int) - 1):result)
 
 
+
 concatenateWithComma :: [String] -> String
 concatenateWithComma [] = []
 concatenateWithComma (x:xs) = " " ++ x ++ "," ++ concatenateWithComma xs
